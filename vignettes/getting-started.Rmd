@@ -1,0 +1,531 @@
+---
+title: "Getting Started with landgraph"
+author: "Bill Peterman"
+output:
+  rmarkdown::html_vignette:
+    number_sections: true
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Getting Started with landgraph}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  fig.width  = 6,
+  fig.height = 4.25
+)
+```
+
+# Introduction
+
+`landgraph` holds the shared inputs that landscape-genetic network methods
+consume: a lightweight spatial graph, genetic covariance and distance matrices
+built from molecular data, and antisymmetric directional edge covariates. It is
+the common base beneath two downstream packages: `terradish`, which estimates
+symmetric landscape resistance, and `dragonflow`, which estimates asymmetric
+(directional) gene flow. You can also use `landgraph` on its own whenever you
+need a graph, a genetic covariance, or a directional covariate.
+
+This vignette walks the whole pipeline end to end. You will build a graph from
+deme coordinates, turn molecular data into a covariance matrix and a distance
+matrix, read what those matrices mean, and construct the two kinds of
+directional edge covariate. Every output is shown and then interpreted, so you
+can recognize and trust what you produce on your own data.
+
+You need only a working knowledge of R and of population-genetic terms such as
+allele, locus, and population. Terms specific to this package are defined as
+they appear. The package depends on base R and `stats` only; the spatial reader
+(`terra`) and the Delaunay graph builder (`deldir`) are optional and used only
+where noted.
+
+A note on vocabulary. A **deme** is a local breeding group of individuals, the
+unit at a single sampled site. A **vertex** (or **node**) is a deme's position
+in the graph. An **edge** joins two vertices that the graph treats as
+neighbors. These words are used interchangeably with their graph meaning
+throughout.
+
+```{r load}
+library(landgraph)
+```
+
+# Building a deme graph
+
+The graph is the spatial scaffold. `deme_graph()` takes a two-column matrix of
+coordinates, one row per deme, and returns the vertices plus an undirected edge
+list. We will lay six demes on a small grid and connect them with **rook**
+adjacency, which joins each deme to its immediate horizontal and vertical
+neighbors (the four cardinal directions), the same neighborhood a raster
+analysis with four directions would use.
+
+```{r graph}
+coords <- as.matrix(expand.grid(x = 0:2, y = 0:1))   # 6 demes on a 3 x 2 grid
+rownames(coords) <- paste0("deme", seq_len(nrow(coords)))
+coords
+
+g <- deme_graph(coords, neighbours = "lattice")
+g
+```
+
+**How to read the output:** printing the graph reports the vertex count and the
+number of undirected edges. The object itself is a list with the parts you will
+pass downstream:
+
+```{r graph-parts}
+str(g)
+g$edge_pairs
+```
+
+- `vertex_coordinates` is the `n x 2` coordinate matrix, one row per deme, in the
+  order you supplied.
+- `edge_pairs` is an `m x 2` integer matrix of undirected edges. Each row holds
+  the 1-based row indices of the two demes an edge joins. Each pair appears once,
+  always with the smaller index first (`a < b`), and the rows are sorted. This
+  canonical form is what makes the directional covariates later in this vignette
+  unambiguous.
+- `n_vertices` is the deme count, a convenience copy of `nrow(vertex_coordinates)`.
+
+The returned object carries class `c("landgraph", "terradish_graph")`, so it
+drops directly into `dragonflow::dragon()` and is interchangeable with a
+`terradish::conductance_surface()` result.
+
+A quick plot makes the adjacency concrete. Edges are drawn first so the deme
+markers sit on top.
+
+```{r graph-plot, fig.alt = "Six demes on a grid joined by rook-adjacency edges."}
+op <- par(no.readonly = TRUE)
+par(mar = c(4, 4, 1, 1))
+plot(g$vertex_coordinates, type = "n", asp = 1, xlab = "x", ylab = "y")
+ep <- g$edge_pairs
+segments(g$vertex_coordinates[ep[, 1], 1], g$vertex_coordinates[ep[, 1], 2],
+         g$vertex_coordinates[ep[, 2], 1], g$vertex_coordinates[ep[, 2], 2],
+         col = "grey60")
+points(g$vertex_coordinates, pch = 21, bg = "steelblue", cex = 3)
+text(g$vertex_coordinates, labels = seq_len(nrow(coords)), col = "white")
+par(op)
+```
+
+**How to read this plot:** each blue circle is a deme, numbered by its row in
+`coords`. A grey line is an edge in `edge_pairs`. Rook adjacency gives the seven
+edges you see: the within-row horizontal links and the between-row vertical
+links, with no diagonals.
+
+## Choosing the neighbourhood
+
+The `neighbours` argument selects how edges are drawn. The three options trade
+off assumptions about your sampling layout.
+
+| Value | What it does | When to use it |
+|-------|--------------|----------------|
+| `"lattice"` | Rook adjacency on a regular grid; add diagonals with `queen = TRUE` | Demes lie on an integer grid with uniform spacing |
+| `"knn"` | Joins each deme to its `k` nearest neighbors, then symmetrizes | Irregularly placed demes; `k` controls connectivity |
+| `"delaunay"` | The Delaunay triangulation (needs the `deldir` package) | Irregular demes, when you want a planar, parameter-free graph |
+
+For `"knn"`, set `k` to the number of neighbors each deme should reach; the
+result is symmetrized, so if deme A lists B among its neighbors the edge A-B is
+kept even when B does not list A. For `"lattice"`, leave `queen = FALSE` for the
+four cardinal neighbors, or set `queen = TRUE` to add the four diagonal
+neighbors (eight in total). `"delaunay"` takes no tuning but requires `deldir`;
+if the package is absent, `deme_graph()` stops with an instructive message
+rather than failing silently.
+
+```{r graph-knn}
+g_knn <- deme_graph(coords, neighbours = "knn", k = 2)
+nrow(g_knn$edge_pairs)   # edge count under 2-nearest-neighbour adjacency
+```
+
+# Genetic covariance from biallelic (SNP) data
+
+With a graph in hand, the next input is a genetic covariance matrix among the
+same demes. `cov_from_biallelic()` builds one from counts of the derived allele
+at biallelic (two-state) markers such as SNPs. We simulate counts for the six
+demes across eight SNPs, sampling 40 haploid chromosomes (20 diploid
+individuals) per deme.
+
+```{r snp-data}
+set.seed(42)
+n_demes <- nrow(coords)
+n_snp   <- 8
+freqs   <- runif(n_snp, 0.1, 0.9)                 # a true frequency per SNP
+Y <- vapply(freqs, function(p) rbinom(n_demes, size = 40, prob = p),
+            numeric(n_demes))
+rownames(Y) <- rownames(coords)
+colnames(Y) <- paste0("snp", seq_len(n_snp))
+Y
+```
+
+`Y` is the **derived-allele count matrix**: demes in rows, loci in columns. Each
+cell is the number of copies of the derived (counted) allele observed in that
+deme at that locus. For diploid individuals genotyped 0/1/2, this is the
+standard allele-dosage matrix.
+
+The second input, `N`, is the **haploid sample size**: how many chromosomes were
+scored in each cell. You can supply it flexibly, and the choice you make should
+reflect how your sampling actually varied.
+
+| `N` form | Meaning |
+|----------|---------|
+| `NULL` (default) | Use `ploidy` for every cell (assumes complete genotyping) |
+| a single number | The same sample size in every cell |
+| length `nrow(Y)` | One size per deme, constant across loci |
+| length `ncol(Y)` | One size per locus, constant across demes |
+| a matrix matching `Y` | A separate size for every cell (handles missing data) |
+
+Here every cell was scored at 40 chromosomes, so a single number is enough.
+
+```{r snp-cov}
+S <- cov_from_biallelic(Y, N = 40)
+round(S, 3)
+```
+
+**How to read the output:** `S` is a symmetric deme-by-deme covariance matrix on
+the scale of normalized allele frequencies. Internally the function standardizes
+each locus to the pooled allele frequency across demes, so each SNP contributes
+on a comparable scale, then averages the cross-products over loci (the genomic
+relationship matrix of Yang et al. 2010). Read the entries as relatedness in
+allele-frequency space:
+
+- A **diagonal** entry is a deme's variance, how far its standardized allele
+  frequencies sit from the pooled mean. Larger means more distinctive.
+- An **off-diagonal** entry is the covariance between two demes. Positive means
+  they deviate from the pooled frequencies in the same direction (genetically
+  similar); negative means they deviate oppositely (differentiated).
+
+The matrix is positive semi-definite up to numerical tolerance, and row and
+column names are carried through from `Y`. This is exactly the response `S` that
+`terradish::wishart_covariance()` expects.
+
+A locus that is **monomorphic** (fixed at frequency 0 or 1 across all demes)
+carries no information and cannot be standardized. By default such loci are
+dropped with a warning; set `monomorphic = "error"` to stop instead. The `tol`
+argument sets how close to 0 or 1 a pooled frequency must be to count as fixed.
+
+# Pairwise F_ST
+
+For a more classical summary of differentiation, `fst_from_biallelic()` returns
+pairwise F_ST, the proportion of total genetic variation that is due to
+differences between demes rather than within them. It uses the
+ratio-of-averages estimator of Bhatia et al. (2013), which combines information
+across loci before taking the ratio. This function needs `N` as a full matrix.
+
+```{r fst}
+Nmat <- matrix(40, n_demes, n_snp)
+fst <- fst_from_biallelic(Y, Nmat)
+round(fst, 4)
+```
+
+**How to read the output:** `fst` is a symmetric matrix with a zero diagonal
+(a deme has no differentiation from itself). Each off-diagonal entry is the
+pairwise F_ST between two demes: 0 means the pair is genetically
+indistinguishable, and larger positive values mean stronger differentiation.
+F_ST is already a proportion, so no back-transformation is needed.
+
+One caution on scale: the estimator is not constrained to `[0, 1]`. For very
+similar demes, sampling noise can push an estimate slightly below zero. Read a
+small negative value as "no detectable differentiation," not as an error.
+
+# Covariance from multivariate or microsatellite data
+
+Not all data are biallelic. `cov_from_genetic_data()` builds a covariance from
+any numeric genetic encoding: microsatellite allele calls, multiallelic markers,
+SNP dosages, or principal-component scores. It works at two levels. With no
+groups, each row is an individual and you get an individual-level covariance.
+With `groups`, rows are pooled to population centroids and you get a
+population-level covariance, the construction behind Dyer-style population
+graphs (Dyer and Nason 2004).
+
+The method is **Gower double-centering** (Gower 1966): it forms squared
+Euclidean distances among the units in feature space, then centers them into a
+covariance. We start from a small numeric feature matrix for three populations
+of two individuals each.
+
+```{r multi-features}
+x <- matrix(c(0, 1,
+              1, 1,
+              2, 0,
+              2, 1,
+              0, 2,
+              1, 2),
+            ncol = 2, byrow = TRUE)
+groups <- rep(c("pop1", "pop2", "pop3"), each = 2)
+
+Sg <- cov_from_genetic_data(x, groups = groups)
+round(Sg, 3)
+```
+
+**How to read the output:** `Sg` is a population-by-population covariance. Off
+the diagonal it behaves like the SNP covariance above: positive means two
+populations sit on the same side of the overall mean in feature space. The
+diagonal, however, is special here. Because these populations have replication
+(two individuals each), `cov_from_genetic_data()` defaults to
+`diagonal = "within"`, which replaces each diagonal entry with that population's
+**within-population genetic variance**, the spread of its members in feature
+space. This matches the covariance used before partial-correlation filtering in
+population-graph workflows.
+
+The function attaches the intermediate quantities as attributes, so you can
+inspect or reuse them. The most useful are listed below.
+
+```{r multi-attrs}
+attr(Sg, "level")            # "population" once groups have replication
+attr(Sg, "diagonal")         # the diagonal rule actually applied
+attr(Sg, "within_variance")  # the within-population variances on the diagonal
+attr(Sg, "unit_size")        # number of individuals per population
+```
+
+| Attribute | What it holds |
+|-----------|---------------|
+| `level` | `"individual"` or `"population"` |
+| `diagonal` | The diagonal rule used: `"within"` or `"gower"` |
+| `within_variance` | Within-population variance per group (the `"within"` diagonal) |
+| `centroids` | Population centroids in feature space |
+| `centroid_distance2` | Squared distances among centroids |
+| `unit_size` | Individuals per group |
+| `retained_features` | Features kept after constant ones were dropped |
+
+The `diagonal` argument controls this behavior directly. `"auto"` (the default)
+uses `"within"` when groups have replication and `"gower"` otherwise. Force
+`"gower"` to keep the plain double-centered diagonal, or `"within"` to require
+the within-population variance. Two more arguments shape the feature space
+before centering: `center` and `scale` (both `TRUE` by default) standardize each
+feature, and `normalize = "features"` divides the result by the number of
+retained features so its scale does not grow with marker count.
+
+## Microsatellite allele calls
+
+Microsatellite data usually arrive as allele calls, two columns per locus for a
+diploid. Set `input = "allele_calls"` and pass `loci` to tell the function which
+columns belong to the same locus. The calls are converted to per-allele dosage
+columns before centering.
+
+```{r multi-msat}
+alleles <- data.frame(
+  loc1_a = c(100, 100, 102, 102, 104, 104),
+  loc1_b = c(100, 102, 102, 104, 104, 100),
+  loc2_a = c(200, 202, 200, 202, 204, 204),
+  loc2_b = c(202, 202, 204, 204, 204, 200)
+)
+
+Sm <- cov_from_genetic_data(
+  alleles,
+  groups = groups,
+  input  = "allele_calls",
+  loci   = c("loc1", "loc1", "loc2", "loc2")
+)
+round(Sm, 3)
+```
+
+**How to read the output:** the result is the same kind of population covariance
+as before. The `loci` vector has one entry per column of `alleles` and names the
+locus each allele copy belongs to; here the first two columns are `loc1` and the
+last two are `loc2`. A missing call is imputed to the most common (modal) allele
+observed at that locus, and the function reports how many calls it filled in.
+
+A modeling note for downstream Wishart fits. The effective degrees of freedom
+`nu` is the number of independent pieces of information in the covariance. For
+SNPs that is roughly the retained SNP count. For microsatellites it is safest to
+use the number of **loci**, because the allele frequencies within one locus are
+correlated (they sum to a constant) and so do not each count as independent.
+Report the value you use and check that conclusions hold across the plausible
+range.
+
+# From covariance to distance
+
+Some models want a distance matrix rather than a covariance. `dist_from_cov()`
+converts one to the other using the identity that relates a covariance to its
+implied squared Euclidean distances:
+
+$$D_{ij} = C_{ii} + C_{jj} - 2 C_{ij}.$$
+
+```{r dist}
+D <- dist_from_cov(S)
+round(D, 3)
+```
+
+**How to read the output:** `D` is a symmetric squared-distance matrix with a
+zero diagonal and non-negative off-diagonal entries. A larger value means two
+demes are farther apart in genetic space, the natural response for an
+isolation-by-distance or resistance model such as `terradish::mlpe()` or
+`terradish::generalized_wishart()`. Because `D` is built from `S`, the two
+describe the same structure: where the covariance is high, the distance is low.
+
+For biallelic data you can go straight from counts to distance with
+`dist_from_biallelic()`, a convenience wrapper for
+`dist_from_cov(cov_from_biallelic(Y, N))`.
+
+```{r dist-wrap}
+D2 <- dist_from_biallelic(Y, N = 40)
+all.equal(D, D2)   # same as the two-step route above
+```
+
+# Directional edge covariates
+
+The last piece is what makes directed gene-flow models possible. A
+**directional edge covariate** assigns a value to each edge that flips sign when
+you traverse the edge the other way, so it can describe an asymmetry such as
+flow downhill or with a prevailing wind. The covariate is **antisymmetric**:
+the value from deme `a` to deme `b` is the negative of the value from `b` to
+`a`. `landgraph` builds two kinds.
+
+## Gradient of a scalar potential
+
+`edge_gradient()` takes a single value per deme (a **scalar potential** such as
+elevation) and returns the drop across each directed edge, `x_a - x_b`. Movement
+from high to low potential is the "downhill" direction. We use the sum of the
+coordinates as a stand-in elevation.
+
+```{r grad}
+elevation <- coords[, "x"] + coords[, "y"]   # one value per deme
+elevation
+
+eg <- edge_gradient(elevation, g)
+str(eg)
+```
+
+**How to read the output:** `edge_gradient()` returns a list with two parts.
+`edges` is an integer matrix of **directed** edges; every undirected edge from
+the graph appears twice, once in each direction (columns `a` and `b` are the
+start and end deme). `d` is the matching vector of potential drops, `x_a - x_b`,
+one per directed edge. Because each edge appears in both directions, the second
+half of `d` is the exact negative of the first half. That sign flip is the
+antisymmetry, and it is what a directed model uses to tell "uphill" from
+"downhill." A positive coefficient on this covariate in `terradish` directional
+models means movement speeds up as potential drops.
+
+## Projection of a vector flow field
+
+`edge_gradient()` can only describe forces that point "downhill" from some
+potential. A real flow such as wind or current can also rotate, circling without
+any high or low point to descend from. `edge_flow()` captures that. It takes a
+**vector field** (an x-component and a y-component at each deme) and projects the
+average field along each edge onto the edge's direction. The covariate for
+undirected edge `(a, b)` is
+
+$$c_{ab} = \tfrac{1}{2}(f_a + f_b) \cdot (xy_b - xy_a),$$
+
+the mean field on the edge dotted with the step from `a` to `b`. We build a
+counter-clockwise rotational field centered on the demes, the kind of pattern a
+scalar potential cannot represent.
+
+```{r flow}
+cen <- colMeans(g$vertex_coordinates)
+rotational <- function(xy) cbind(-(xy[, 2] - cen[2]), xy[, 1] - cen[1])
+
+circ <- edge_flow(rotational, g)
+round(circ, 3)
+```
+
+**How to read the output:** `circ` has one entry per undirected edge in
+`g$edge_pairs`, in the same row order. The sign tells you whether the field
+pushes along the edge from `a` to `b` (positive) or from `b` to `a` (negative),
+and the magnitude is how strongly. The covariate is antisymmetric by
+construction: a downstream model applies `circ` to the `a -> b` direction and
+its negative to `b -> a`. Pass it straight to `dragonflow::dragon()` as
+`circulation = circ`. The `field` argument also accepts a two-column matrix of
+components in vertex order, or a two-layer `terra::SpatRaster` sampled at the
+deme coordinates; the function form used here is convenient when you can express
+the field analytically.
+
+The plot below draws the field as an arrow at each deme, over the graph. The
+arrows circle the center, which is exactly the rotational signal `edge_flow()`
+extracts and `edge_gradient()` would miss.
+
+```{r flow-plot, fig.alt = "A counter-clockwise vector field drawn as arrows at each deme over the graph edges."}
+op <- par(no.readonly = TRUE)
+par(mar = c(4, 4, 1, 1))
+vc  <- g$vertex_coordinates
+fld <- rotational(vc)
+plot(vc, type = "n", asp = 1, xlab = "x", ylab = "y",
+     xlim = range(vc[, 1]) + c(-0.4, 0.4),
+     ylim = range(vc[, 2]) + c(-0.4, 0.4))
+segments(vc[ep[, 1], 1], vc[ep[, 1], 2],
+         vc[ep[, 2], 1], vc[ep[, 2], 2], col = "grey80")
+arrows(vc[, 1], vc[, 2],
+       vc[, 1] + 0.3 * fld[, 1], vc[, 2] + 0.3 * fld[, 2],
+       length = 0.08, col = "firebrick")
+points(vc, pch = 21, bg = "steelblue", cex = 2.5)
+par(op)
+```
+
+**How to read this plot:** each red arrow is the flow vector at a deme; together
+they trace a counter-clockwise circulation. `edge_flow()` reads this field along
+each grey edge and returns the signed strength in `circ`. Where an arrow points
+along an edge, that edge gets a large covariate; where the flow crosses an edge
+sideways, the covariate is near zero.
+
+# Quick reference
+
+The complete pipeline, from coordinates and molecular data to the inputs a
+downstream model consumes:
+
+```{r quick-ref, eval = FALSE}
+library(landgraph)
+
+# 1. Build the spatial graph from deme coordinates
+g <- deme_graph(coords, neighbours = "lattice")    # or "knn" / "delaunay"
+
+# 2. Genetic covariance and distance from biallelic (SNP) counts
+S <- cov_from_biallelic(Y, N = 40)                 # deme covariance
+D <- dist_from_cov(S)                              # squared genetic distance
+D <- dist_from_biallelic(Y, N = 40)                # the two steps in one call
+fst <- fst_from_biallelic(Y, Nmat)                 # pairwise F_ST (N as a matrix)
+
+# 2b. Covariance from microsatellite / multivariate data
+Sg <- cov_from_genetic_data(x, groups = groups)    # population covariance
+Sg <- cov_from_genetic_data(alleles, groups = groups,
+                            input = "allele_calls",
+                            loci = c("loc1", "loc1", "loc2", "loc2"))
+
+# 3. Directional edge covariates for directed models
+eg   <- edge_gradient(elevation, g)                # downhill drop; eg$d per directed edge
+circ <- edge_flow(rotational, g)                   # circulation per undirected edge
+
+# 4. Hand off downstream
+#    terradish::wishart_covariance(S = S, ...)      # symmetric resistance
+#    dragonflow::dragon(..., circulation = circ)    # asymmetric gene flow
+```
+
+# Summary of key functions
+
+| Function | Purpose |
+|----------|---------|
+| `deme_graph()` | Build a deme/landscape graph (vertices + undirected edges) from coordinates |
+| `cov_from_biallelic()` | Genetic covariance from biallelic (SNP) allele counts |
+| `fst_from_biallelic()` | Pairwise F_ST from biallelic allele counts |
+| `cov_from_genetic_data()` | Covariance from multivariate or microsatellite data |
+| `dist_from_cov()` | Convert a covariance matrix to a squared-distance matrix |
+| `dist_from_biallelic()` | Covariance-to-distance shortcut for biallelic counts |
+| `edge_gradient()` | Directional covariate from the gradient of a scalar potential |
+| `edge_flow()` | Directional covariate from the projection of a vector flow field |
+
+# See also
+
+- The function help pages, for the full argument lists and return values:
+  `?deme_graph`, `?cov_from_biallelic`, `?cov_from_genetic_data`,
+  `?edge_gradient`, and `?edge_flow`.
+- `terradish`, for symmetric landscape resistance models that consume the
+  covariance and distance matrices built here.
+- `dragonflow`, for asymmetric (directional) gene-flow models that consume the
+  graph and the directional edge covariates from `edge_gradient()` and
+  `edge_flow()`.
+
+# References
+
+Bhatia G, Patterson N, Sankararaman S, Price AL. 2013. Estimating and
+interpreting F_ST: the impact of rare variants. Genome Research 23(9):1514-1521.
+doi:10.1101/gr.154831.113
+
+Dyer RJ, Nason JD. 2004. Population graphs: the graph theoretic shape of genetic
+structure. Molecular Ecology 13(7):1713-1727.
+doi:10.1111/j.1365-294X.2004.02177.x
+
+Gower JC. 1966. Some distance properties of latent root and vector methods used
+in multivariate analysis. Biometrika 53(3-4):325-338.
+doi:10.1093/biomet/53.3-4.325
+
+Yang J, Benyamin B, McEvoy BP, et al. 2010. Common SNPs explain a large
+proportion of the heritability for human height. Nature Genetics 42(7):565-569.
+doi:10.1038/ng.608

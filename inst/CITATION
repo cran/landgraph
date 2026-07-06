@@ -1,0 +1,9 @@
+bibentry(
+  bibtype  = "Manual",
+  title    = "landgraph: Graphs and Covariance for Landscape Genetics",
+  author   = c(person("Bill", "Peterman"),
+               person(c("Nathaniel", "S."), "Pope")),
+  year     = "2026",
+  note     = "R package version 0.0.1",
+  url      = "https://github.com/wpeterman/landgraph"
+)

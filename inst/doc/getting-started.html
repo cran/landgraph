@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Bill Peterman" />
+
+
+<title>Getting Started with landgraph</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Getting Started with landgraph</h1>
+<h4 class="author">Bill Peterman</h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="#building-a-deme-graph" id="toc-building-a-deme-graph"><span class="toc-section-number">2</span>
+Building a deme graph</a>
+<ul>
+<li><a href="#choosing-the-neighbourhood" id="toc-choosing-the-neighbourhood"><span class="toc-section-number">2.1</span> Choosing the
+neighbourhood</a></li>
+</ul></li>
+<li><a href="#genetic-covariance-from-biallelic-snp-data" id="toc-genetic-covariance-from-biallelic-snp-data"><span class="toc-section-number">3</span> Genetic covariance from biallelic
+(SNP) data</a></li>
+<li><a href="#pairwise-f_st" id="toc-pairwise-f_st"><span class="toc-section-number">4</span> Pairwise F_ST</a></li>
+<li><a href="#covariance-from-multivariate-or-microsatellite-data" id="toc-covariance-from-multivariate-or-microsatellite-data"><span class="toc-section-number">5</span> Covariance from multivariate or
+microsatellite data</a>
+<ul>
+<li><a href="#microsatellite-allele-calls" id="toc-microsatellite-allele-calls"><span class="toc-section-number">5.1</span> Microsatellite allele
+calls</a></li>
+</ul></li>
+<li><a href="#from-covariance-to-distance" id="toc-from-covariance-to-distance"><span class="toc-section-number">6</span> From covariance to distance</a></li>
+<li><a href="#directional-edge-covariates" id="toc-directional-edge-covariates"><span class="toc-section-number">7</span> Directional edge covariates</a>
+<ul>
+<li><a href="#gradient-of-a-scalar-potential" id="toc-gradient-of-a-scalar-potential"><span class="toc-section-number">7.1</span> Gradient of a scalar
+potential</a></li>
+<li><a href="#projection-of-a-vector-flow-field" id="toc-projection-of-a-vector-flow-field"><span class="toc-section-number">7.2</span> Projection of a vector flow
+field</a></li>
+</ul></li>
+<li><a href="#quick-reference" id="toc-quick-reference"><span class="toc-section-number">8</span> Quick reference</a></li>
+<li><a href="#summary-of-key-functions" id="toc-summary-of-key-functions"><span class="toc-section-number">9</span> Summary of key functions</a></li>
+<li><a href="#see-also" id="toc-see-also"><span class="toc-section-number">10</span> See also</a></li>
+<li><a href="#references" id="toc-references"><span class="toc-section-number">11</span> References</a></li>
+</ul>
+</div>
+
+<div id="introduction" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p><code>landgraph</code> holds the shared inputs that landscape-genetic
+network methods consume: a lightweight spatial graph, genetic covariance
+and distance matrices built from molecular data, and antisymmetric
+directional edge covariates. It is the common base beneath two
+downstream packages: <code>terradish</code>, which estimates symmetric
+landscape resistance, and <code>dragonflow</code>, which estimates
+asymmetric (directional) gene flow. You can also use
+<code>landgraph</code> on its own whenever you need a graph, a genetic
+covariance, or a directional covariate.</p>
+<p>This vignette walks the whole pipeline end to end. You will build a
+graph from deme coordinates, turn molecular data into a covariance
+matrix and a distance matrix, read what those matrices mean, and
+construct the two kinds of directional edge covariate. Every output is
+shown and then interpreted, so you can recognize and trust what you
+produce on your own data.</p>
+<p>You need only a working knowledge of R and of population-genetic
+terms such as allele, locus, and population. Terms specific to this
+package are defined as they appear. The package depends on base R and
+<code>stats</code> only; the spatial reader (<code>terra</code>) and the
+Delaunay graph builder (<code>deldir</code>) are optional and used only
+where noted.</p>
+<p>A note on vocabulary. A <strong>deme</strong> is a local breeding
+group of individuals, the unit at a single sampled site. A
+<strong>vertex</strong> (or <strong>node</strong>) is a deme’s position
+in the graph. An <strong>edge</strong> joins two vertices that the graph
+treats as neighbors. These words are used interchangeably with their
+graph meaning throughout.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(landgraph)</span></code></pre></div>
+</div>
+<div id="building-a-deme-graph" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Building a deme
+graph</h1>
+<p>The graph is the spatial scaffold. <code>deme_graph()</code> takes a
+two-column matrix of coordinates, one row per deme, and returns the
+vertices plus an undirected edge list. We will lay six demes on a small
+grid and connect them with <strong>rook</strong> adjacency, which joins
+each deme to its immediate horizontal and vertical neighbors (the four
+cardinal directions), the same neighborhood a raster analysis with four
+directions would use.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>coords <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">expand.grid</span>(<span class="at">x =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">y =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>))   <span class="co"># 6 demes on a 3 x 2 grid</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">rownames</span>(coords) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;deme&quot;</span>, <span class="fu">seq_len</span>(<span class="fu">nrow</span>(coords)))</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>coords</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;       x y</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; deme1 0 0</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; deme2 1 0</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; deme3 2 0</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; deme4 0 1</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; deme5 1 1</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; deme6 2 1</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>g <span class="ot">&lt;-</span> <span class="fu">deme_graph</span>(coords, <span class="at">neighbours =</span> <span class="st">&quot;lattice&quot;</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>g</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; landgraph: 6 vertices, 7 undirected edges</span></span></code></pre></div>
+<p><strong>How to read the output:</strong> printing the graph reports
+the vertex count and the number of undirected edges. The object itself
+is a list with the parts you will pass downstream:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">str</span>(g)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; List of 4</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;  $ vertex_coordinates: num [1:6, 1:2] 0 1 2 0 1 2 0 0 0 1 ...</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;dimnames&quot;)=List of 2</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;   .. ..$ : chr [1:6] &quot;deme1&quot; &quot;deme2&quot; &quot;deme3&quot; &quot;deme4&quot; ...</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;   .. ..$ : chr [1:2] &quot;x&quot; &quot;y&quot;</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;  $ edge_pairs        : int [1:7, 1:2] 1 1 2 2 3 4 5 2 4 3 ...</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;  $ coords            : num [1:6, 1:2] 0 1 2 0 1 2 0 0 0 1 ...</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;dimnames&quot;)=List of 2</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;   .. ..$ : chr [1:6] &quot;deme1&quot; &quot;deme2&quot; &quot;deme3&quot; &quot;deme4&quot; ...</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;   .. ..$ : chr [1:2] &quot;x&quot; &quot;y&quot;</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;  $ n_vertices        : int 6</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;class&quot;)= chr [1:2] &quot;landgraph&quot; &quot;terradish_graph&quot;</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>g<span class="sc">$</span>edge_pairs</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; [1,]    1    2</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; [2,]    1    4</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; [3,]    2    3</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; [4,]    2    5</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; [5,]    3    6</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; [6,]    4    5</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; [7,]    5    6</span></span></code></pre></div>
+<ul>
+<li><code>vertex_coordinates</code> is the <code>n x 2</code> coordinate
+matrix, one row per deme, in the order you supplied.</li>
+<li><code>edge_pairs</code> is an <code>m x 2</code> integer matrix of
+undirected edges. Each row holds the 1-based row indices of the two
+demes an edge joins. Each pair appears once, always with the smaller
+index first (<code>a &lt; b</code>), and the rows are sorted. This
+canonical form is what makes the directional covariates later in this
+vignette unambiguous.</li>
+<li><code>n_vertices</code> is the deme count, a convenience copy of
+<code>nrow(vertex_coordinates)</code>.</li>
+</ul>
+<p>The returned object carries class
+<code>c(&quot;landgraph&quot;, &quot;terradish_graph&quot;)</code>, so it drops directly
+into <code>dragonflow::dragon()</code> and is interchangeable with a
+<code>terradish::conductance_surface()</code> result.</p>
+<p>A quick plot makes the adjacency concrete. Edges are drawn first so
+the deme markers sit on top.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">par</span>(<span class="at">no.readonly =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">plot</span>(g<span class="sc">$</span>vertex_coordinates, <span class="at">type =</span> <span class="st">&quot;n&quot;</span>, <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">xlab =</span> <span class="st">&quot;x&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;y&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>ep <span class="ot">&lt;-</span> g<span class="sc">$</span>edge_pairs</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">segments</span>(g<span class="sc">$</span>vertex_coordinates[ep[, <span class="dv">1</span>], <span class="dv">1</span>], g<span class="sc">$</span>vertex_coordinates[ep[, <span class="dv">1</span>], <span class="dv">2</span>],</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>         g<span class="sc">$</span>vertex_coordinates[ep[, <span class="dv">2</span>], <span class="dv">1</span>], g<span class="sc">$</span>vertex_coordinates[ep[, <span class="dv">2</span>], <span class="dv">2</span>],</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>         <span class="at">col =</span> <span class="st">&quot;grey60&quot;</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="fu">points</span>(g<span class="sc">$</span>vertex_coordinates, <span class="at">pch =</span> <span class="dv">21</span>, <span class="at">bg =</span> <span class="st">&quot;steelblue&quot;</span>, <span class="at">cex =</span> <span class="dv">3</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="fu">text</span>(g<span class="sc">$</span>vertex_coordinates, <span class="at">labels =</span> <span class="fu">seq_len</span>(<span class="fu">nrow</span>(coords)), <span class="at">col =</span> <span class="st">&quot;white&quot;</span>)</span></code></pre></div>
+<p><img role="img" aria-label="Six demes on a grid joined by rook-adjacency edges." src="data:image/png;base64,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" alt="Six demes on a grid joined by rook-adjacency edges." /></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">par</span>(op)</span></code></pre></div>
+<p><strong>How to read this plot:</strong> each blue circle is a deme,
+numbered by its row in <code>coords</code>. A grey line is an edge in
+<code>edge_pairs</code>. Rook adjacency gives the seven edges you see:
+the within-row horizontal links and the between-row vertical links, with
+no diagonals.</p>
+<div id="choosing-the-neighbourhood" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Choosing the
+neighbourhood</h2>
+<p>The <code>neighbours</code> argument selects how edges are drawn. The
+three options trade off assumptions about your sampling layout.</p>
+<table>
+<colgroup>
+<col width="18%" />
+<col width="37%" />
+<col width="43%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Value</th>
+<th>What it does</th>
+<th>When to use it</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>&quot;lattice&quot;</code></td>
+<td>Rook adjacency on a regular grid; add diagonals with
+<code>queen = TRUE</code></td>
+<td>Demes lie on an integer grid with uniform spacing</td>
+</tr>
+<tr class="even">
+<td><code>&quot;knn&quot;</code></td>
+<td>Joins each deme to its <code>k</code> nearest neighbors, then
+symmetrizes</td>
+<td>Irregularly placed demes; <code>k</code> controls connectivity</td>
+</tr>
+<tr class="odd">
+<td><code>&quot;delaunay&quot;</code></td>
+<td>The Delaunay triangulation (needs the <code>deldir</code>
+package)</td>
+<td>Irregular demes, when you want a planar, parameter-free graph</td>
+</tr>
+</tbody>
+</table>
+<p>For <code>&quot;knn&quot;</code>, set <code>k</code> to the number of neighbors
+each deme should reach; the result is symmetrized, so if deme A lists B
+among its neighbors the edge A-B is kept even when B does not list A.
+For <code>&quot;lattice&quot;</code>, leave <code>queen = FALSE</code> for the
+four cardinal neighbors, or set <code>queen = TRUE</code> to add the
+four diagonal neighbors (eight in total). <code>&quot;delaunay&quot;</code> takes
+no tuning but requires <code>deldir</code>; if the package is absent,
+<code>deme_graph()</code> stops with an instructive message rather than
+failing silently.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>g_knn <span class="ot">&lt;-</span> <span class="fu">deme_graph</span>(coords, <span class="at">neighbours =</span> <span class="st">&quot;knn&quot;</span>, <span class="at">k =</span> <span class="dv">2</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">nrow</span>(g_knn<span class="sc">$</span>edge_pairs)   <span class="co"># edge count under 2-nearest-neighbour adjacency</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; [1] 7</span></span></code></pre></div>
+</div>
+</div>
+<div id="genetic-covariance-from-biallelic-snp-data" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Genetic covariance from
+biallelic (SNP) data</h1>
+<p>With a graph in hand, the next input is a genetic covariance matrix
+among the same demes. <code>cov_from_biallelic()</code> builds one from
+counts of the derived allele at biallelic (two-state) markers such as
+SNPs. We simulate counts for the six demes across eight SNPs, sampling
+40 haploid chromosomes (20 diploid individuals) per deme.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>n_demes <span class="ot">&lt;-</span> <span class="fu">nrow</span>(coords)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>n_snp   <span class="ot">&lt;-</span> <span class="dv">8</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>freqs   <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_snp, <span class="fl">0.1</span>, <span class="fl">0.9</span>)                 <span class="co"># a true frequency per SNP</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">vapply</span>(freqs, <span class="cf">function</span>(p) <span class="fu">rbinom</span>(n_demes, <span class="at">size =</span> <span class="dv">40</span>, <span class="at">prob =</span> p),</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>            <span class="fu">numeric</span>(n_demes))</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">rownames</span>(Y) <span class="ot">&lt;-</span> <span class="fu">rownames</span>(coords)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">colnames</span>(Y) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;snp&quot;</span>, <span class="fu">seq_len</span>(n_snp))</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>Y</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt;       snp1 snp2 snp3 snp4 snp5 snp6 snp7 snp8</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; deme1   32   34   17   31   25   16   28    7</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; deme2   32   30   10   27   23   20   22    7</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; deme3   34   29   20   31   32   22   24    8</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; deme4   32   37   18   28   22   21   27   10</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; deme5   30   34    9   29   32   26   22    4</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; deme6   35   34   13   28   27   15   27   10</span></span></code></pre></div>
+<p><code>Y</code> is the <strong>derived-allele count matrix</strong>:
+demes in rows, loci in columns. Each cell is the number of copies of the
+derived (counted) allele observed in that deme at that locus. For
+diploid individuals genotyped 0/1/2, this is the standard allele-dosage
+matrix.</p>
+<p>The second input, <code>N</code>, is the <strong>haploid sample
+size</strong>: how many chromosomes were scored in each cell. You can
+supply it flexibly, and the choice you make should reflect how your
+sampling actually varied.</p>
+<table>
+<colgroup>
+<col width="52%" />
+<col width="47%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>N</code> form</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>NULL</code> (default)</td>
+<td>Use <code>ploidy</code> for every cell (assumes complete
+genotyping)</td>
+</tr>
+<tr class="even">
+<td>a single number</td>
+<td>The same sample size in every cell</td>
+</tr>
+<tr class="odd">
+<td>length <code>nrow(Y)</code></td>
+<td>One size per deme, constant across loci</td>
+</tr>
+<tr class="even">
+<td>length <code>ncol(Y)</code></td>
+<td>One size per locus, constant across demes</td>
+</tr>
+<tr class="odd">
+<td>a matrix matching <code>Y</code></td>
+<td>A separate size for every cell (handles missing data)</td>
+</tr>
+</tbody>
+</table>
+<p>Here every cell was scored at 40 chromosomes, so a single number is
+enough.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">cov_from_biallelic</span>(Y, <span class="at">N =</span> <span class="dv">40</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">round</span>(S, <span class="dv">3</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;        deme1  deme2  deme3  deme4  deme5  deme6</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; deme1  0.551 -0.286 -0.132  0.303 -0.643  0.208</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; deme2 -0.286  0.873 -0.398 -0.285  0.184 -0.088</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; deme3 -0.132 -0.398  1.308 -0.472 -0.029 -0.276</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; deme4  0.303 -0.285 -0.472  1.039 -0.679  0.095</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; deme5 -0.643  0.184 -0.029 -0.679  1.778 -0.610</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; deme6  0.208 -0.088 -0.276  0.095 -0.610  0.672</span></span></code></pre></div>
+<p><strong>How to read the output:</strong> <code>S</code> is a
+symmetric deme-by-deme covariance matrix on the scale of normalized
+allele frequencies. Internally the function standardizes each locus to
+the pooled allele frequency across demes, so each SNP contributes on a
+comparable scale, then averages the cross-products over loci (the
+genomic relationship matrix of Yang et al. 2010). Read the entries as
+relatedness in allele-frequency space:</p>
+<ul>
+<li>A <strong>diagonal</strong> entry is a deme’s variance, how far its
+standardized allele frequencies sit from the pooled mean. Larger means
+more distinctive.</li>
+<li>An <strong>off-diagonal</strong> entry is the covariance between two
+demes. Positive means they deviate from the pooled frequencies in the
+same direction (genetically similar); negative means they deviate
+oppositely (differentiated).</li>
+</ul>
+<p>The matrix is positive semi-definite up to numerical tolerance, and
+row and column names are carried through from <code>Y</code>. This is
+exactly the response <code>S</code> that
+<code>terradish::wishart_covariance()</code> expects.</p>
+<p>A locus that is <strong>monomorphic</strong> (fixed at frequency 0 or
+1 across all demes) carries no information and cannot be standardized.
+By default such loci are dropped with a warning; set
+<code>monomorphic = &quot;error&quot;</code> to stop instead. The <code>tol</code>
+argument sets how close to 0 or 1 a pooled frequency must be to count as
+fixed.</p>
+</div>
+<div id="pairwise-f_st" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Pairwise F_ST</h1>
+<p>For a more classical summary of differentiation,
+<code>fst_from_biallelic()</code> returns pairwise F_ST, the proportion
+of total genetic variation that is due to differences between demes
+rather than within them. It uses the ratio-of-averages estimator of
+Bhatia et al. (2013), which combines information across loci before
+taking the ratio. This function needs <code>N</code> as a full
+matrix.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>Nmat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">40</span>, n_demes, n_snp)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>fst <span class="ot">&lt;-</span> <span class="fu">fst_from_biallelic</span>(Y, Nmat)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">round</span>(fst, <span class="dv">4</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;         [,1]    [,2]   [,3]    [,4]   [,5]    [,6]</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; [1,]  0.0000  0.0013 0.0026 -0.0129 0.0291 -0.0155</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; [2,]  0.0013  0.0000 0.0150  0.0033 0.0051 -0.0039</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; [3,]  0.0026  0.0150 0.0000  0.0126 0.0161  0.0087</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; [4,] -0.0129  0.0033 0.0126  0.0000 0.0310 -0.0047</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; [5,]  0.0291  0.0051 0.0161  0.0310 0.0000  0.0259</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [6,] -0.0155 -0.0039 0.0087 -0.0047 0.0259  0.0000</span></span></code></pre></div>
+<p><strong>How to read the output:</strong> <code>fst</code> is a
+symmetric matrix with a zero diagonal (a deme has no differentiation
+from itself). Each off-diagonal entry is the pairwise F_ST between two
+demes: 0 means the pair is genetically indistinguishable, and larger
+positive values mean stronger differentiation. F_ST is already a
+proportion, so no back-transformation is needed.</p>
+<p>One caution on scale: the estimator is not constrained to
+<code>[0, 1]</code>. For very similar demes, sampling noise can push an
+estimate slightly below zero. Read a small negative value as “no
+detectable differentiation,” not as an error.</p>
+</div>
+<div id="covariance-from-multivariate-or-microsatellite-data" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Covariance from
+multivariate or microsatellite data</h1>
+<p>Not all data are biallelic. <code>cov_from_genetic_data()</code>
+builds a covariance from any numeric genetic encoding: microsatellite
+allele calls, multiallelic markers, SNP dosages, or principal-component
+scores. It works at two levels. With no groups, each row is an
+individual and you get an individual-level covariance. With
+<code>groups</code>, rows are pooled to population centroids and you get
+a population-level covariance, the construction behind Dyer-style
+population graphs (Dyer and Nason 2004).</p>
+<p>The method is <strong>Gower double-centering</strong> (Gower 1966):
+it forms squared Euclidean distances among the units in feature space,
+then centers them into a covariance. We start from a small numeric
+feature matrix for three populations of two individuals each.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>,</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>              <span class="dv">1</span>, <span class="dv">1</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>              <span class="dv">2</span>, <span class="dv">0</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>              <span class="dv">2</span>, <span class="dv">1</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>              <span class="dv">0</span>, <span class="dv">2</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>              <span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>            <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>groups <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;pop1&quot;</span>, <span class="st">&quot;pop2&quot;</span>, <span class="st">&quot;pop3&quot;</span>), <span class="at">each =</span> <span class="dv">2</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>Sg <span class="ot">&lt;-</span> <span class="fu">cov_from_genetic_data</span>(x, <span class="at">groups =</span> groups)</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="fu">round</span>(Sg, <span class="dv">3</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt;        pop1   pop2   pop3</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; pop1  0.625 -0.429  0.067</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; pop2 -0.429  0.882 -1.605</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; pop3  0.067 -1.605  0.625</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centroids&quot;)</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;       feature1   feature2</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; pop1 -0.559017 -0.2214037</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; pop2  1.118034 -0.8856149</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; pop3 -0.559017  1.1070186</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;unit_features&quot;)</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt;       feature1   feature2</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; pop1 -0.559017 -0.2214037</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; pop2  1.118034 -0.8856149</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; pop3 -0.559017  1.1070186</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;within_variance&quot;)</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt;      pop1      pop2      pop3 </span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; 0.6250000 0.8823529 0.6250000 </span></span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centroid_distance2&quot;)</span></span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="co">#&gt;          pop1     pop2     pop3</span></span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a><span class="co">#&gt; pop1 0.000000 3.253676 1.764706</span></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="co">#&gt; pop2 3.253676 0.000000 6.783088</span></span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co">#&gt; pop3 1.764706 6.783088 0.000000</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;unit_distance2&quot;)</span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="co">#&gt;          pop1     pop2     pop3</span></span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="co">#&gt; pop1 0.000000 3.253676 1.764706</span></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="co">#&gt; pop2 3.253676 0.000000 6.783088</span></span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a><span class="co">#&gt; pop3 1.764706 6.783088 0.000000</span></span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;unit_size&quot;)</span></span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="co">#&gt; pop1 pop2 pop3 </span></span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a><span class="co">#&gt;    2    2    2 </span></span>
+<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;feature_center&quot;)</span></span>
+<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a><span class="co">#&gt; feature1 feature2 </span></span>
+<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a><span class="co">#&gt; 1.000000 1.166667 </span></span>
+<span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;feature_scale&quot;)</span></span>
+<span id="cb10-46"><a href="#cb10-46" tabindex="-1"></a><span class="co">#&gt;  feature1  feature2 </span></span>
+<span id="cb10-47"><a href="#cb10-47" tabindex="-1"></a><span class="co">#&gt; 0.8944272 0.7527727 </span></span>
+<span id="cb10-48"><a href="#cb10-48" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;retained_features&quot;)</span></span>
+<span id="cb10-49"><a href="#cb10-49" tabindex="-1"></a><span class="co">#&gt; [1] &quot;feature1&quot; &quot;feature2&quot;</span></span>
+<span id="cb10-50"><a href="#cb10-50" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;input&quot;)</span></span>
+<span id="cb10-51"><a href="#cb10-51" tabindex="-1"></a><span class="co">#&gt; [1] &quot;features&quot;</span></span>
+<span id="cb10-52"><a href="#cb10-52" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;level&quot;)</span></span>
+<span id="cb10-53"><a href="#cb10-53" tabindex="-1"></a><span class="co">#&gt; [1] &quot;population&quot;</span></span>
+<span id="cb10-54"><a href="#cb10-54" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;diagonal&quot;)</span></span>
+<span id="cb10-55"><a href="#cb10-55" tabindex="-1"></a><span class="co">#&gt; [1] &quot;within&quot;</span></span>
+<span id="cb10-56"><a href="#cb10-56" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalize&quot;)</span></span>
+<span id="cb10-57"><a href="#cb10-57" tabindex="-1"></a><span class="co">#&gt; [1] &quot;none&quot;</span></span>
+<span id="cb10-58"><a href="#cb10-58" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalizer&quot;)</span></span>
+<span id="cb10-59"><a href="#cb10-59" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div>
+<p><strong>How to read the output:</strong> <code>Sg</code> is a
+population-by-population covariance. Off the diagonal it behaves like
+the SNP covariance above: positive means two populations sit on the same
+side of the overall mean in feature space. The diagonal, however, is
+special here. Because these populations have replication (two
+individuals each), <code>cov_from_genetic_data()</code> defaults to
+<code>diagonal = &quot;within&quot;</code>, which replaces each diagonal entry
+with that population’s <strong>within-population genetic
+variance</strong>, the spread of its members in feature space. This
+matches the covariance used before partial-correlation filtering in
+population-graph workflows.</p>
+<p>The function attaches the intermediate quantities as attributes, so
+you can inspect or reuse them. The most useful are listed below.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">attr</span>(Sg, <span class="st">&quot;level&quot;</span>)            <span class="co"># &quot;population&quot; once groups have replication</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;population&quot;</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">attr</span>(Sg, <span class="st">&quot;diagonal&quot;</span>)         <span class="co"># the diagonal rule actually applied</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;within&quot;</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">attr</span>(Sg, <span class="st">&quot;within_variance&quot;</span>)  <span class="co"># the within-population variances on the diagonal</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt;      pop1      pop2      pop3 </span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; 0.6250000 0.8823529 0.6250000</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="fu">attr</span>(Sg, <span class="st">&quot;unit_size&quot;</span>)        <span class="co"># number of individuals per population</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; pop1 pop2 pop3 </span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt;    2    2    2</span></span></code></pre></div>
+<table>
+<colgroup>
+<col width="42%" />
+<col width="57%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>level</code></td>
+<td><code>&quot;individual&quot;</code> or <code>&quot;population&quot;</code></td>
+</tr>
+<tr class="even">
+<td><code>diagonal</code></td>
+<td>The diagonal rule used: <code>&quot;within&quot;</code> or
+<code>&quot;gower&quot;</code></td>
+</tr>
+<tr class="odd">
+<td><code>within_variance</code></td>
+<td>Within-population variance per group (the <code>&quot;within&quot;</code>
+diagonal)</td>
+</tr>
+<tr class="even">
+<td><code>centroids</code></td>
+<td>Population centroids in feature space</td>
+</tr>
+<tr class="odd">
+<td><code>centroid_distance2</code></td>
+<td>Squared distances among centroids</td>
+</tr>
+<tr class="even">
+<td><code>unit_size</code></td>
+<td>Individuals per group</td>
+</tr>
+<tr class="odd">
+<td><code>retained_features</code></td>
+<td>Features kept after constant ones were dropped</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>diagonal</code> argument controls this behavior directly.
+<code>&quot;auto&quot;</code> (the default) uses <code>&quot;within&quot;</code> when groups
+have replication and <code>&quot;gower&quot;</code> otherwise. Force
+<code>&quot;gower&quot;</code> to keep the plain double-centered diagonal, or
+<code>&quot;within&quot;</code> to require the within-population variance. Two
+more arguments shape the feature space before centering:
+<code>center</code> and <code>scale</code> (both <code>TRUE</code> by
+default) standardize each feature, and
+<code>normalize = &quot;features&quot;</code> divides the result by the number of
+retained features so its scale does not grow with marker count.</p>
+<div id="microsatellite-allele-calls" class="section level2" number="5.1">
+<h2><span class="header-section-number">5.1</span> Microsatellite allele
+calls</h2>
+<p>Microsatellite data usually arrive as allele calls, two columns per
+locus for a diploid. Set <code>input = &quot;allele_calls&quot;</code> and pass
+<code>loci</code> to tell the function which columns belong to the same
+locus. The calls are converted to per-allele dosage columns before
+centering.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>alleles <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">loc1_a =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">100</span>, <span class="dv">102</span>, <span class="dv">102</span>, <span class="dv">104</span>, <span class="dv">104</span>),</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">loc1_b =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">102</span>, <span class="dv">102</span>, <span class="dv">104</span>, <span class="dv">104</span>, <span class="dv">100</span>),</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">loc2_a =</span> <span class="fu">c</span>(<span class="dv">200</span>, <span class="dv">202</span>, <span class="dv">200</span>, <span class="dv">202</span>, <span class="dv">204</span>, <span class="dv">204</span>),</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">loc2_b =</span> <span class="fu">c</span>(<span class="dv">202</span>, <span class="dv">202</span>, <span class="dv">204</span>, <span class="dv">204</span>, <span class="dv">204</span>, <span class="dv">200</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>Sm <span class="ot">&lt;-</span> <span class="fu">cov_from_genetic_data</span>(</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  alleles,</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  <span class="at">groups =</span> groups,</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  <span class="at">input  =</span> <span class="st">&quot;allele_calls&quot;</span>,</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  <span class="at">loci   =</span> <span class="fu">c</span>(<span class="st">&quot;loc1&quot;</span>, <span class="st">&quot;loc1&quot;</span>, <span class="st">&quot;loc2&quot;</span>, <span class="st">&quot;loc2&quot;</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>)</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="fu">round</span>(Sm, <span class="dv">3</span>)</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt;        pop1   pop2   pop3</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; pop1  3.917 -1.328 -2.689</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; pop2 -1.328  3.917 -0.512</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; pop3 -2.689 -0.512  4.049</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centroids&quot;)</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt;        loc1:100   loc1:102   loc1:104 loc2:200   loc2:202   loc2:204</span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; pop1  1.0206207 -0.2041241 -0.8164966        0  1.0206207 -1.1070186</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; pop2 -0.8164966  1.0206207 -0.2041241        0 -0.2041241  0.2214037</span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; pop3 -0.2041241 -0.8164966  1.0206207        0 -0.8164966  0.8856149</span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;unit_features&quot;)</span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="co">#&gt;        loc1:100   loc1:102   loc1:104 loc2:200   loc2:202   loc2:204</span></span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co">#&gt; pop1  1.0206207 -0.2041241 -0.8164966        0  1.0206207 -1.1070186</span></span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a><span class="co">#&gt; pop2 -0.8164966  1.0206207 -0.2041241        0 -0.2041241  0.2214037</span></span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a><span class="co">#&gt; pop3 -0.2041241 -0.8164966  1.0206207        0 -0.8164966  0.8856149</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;within_variance&quot;)</span></span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a><span class="co">#&gt;     pop1     pop2     pop3 </span></span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a><span class="co">#&gt; 3.916667 3.916667 4.049020 </span></span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centroid_distance2&quot;)</span></span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a><span class="co">#&gt;           pop1     pop2      pop3</span></span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a><span class="co">#&gt; pop1  0.000000 8.514706 12.595588</span></span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a><span class="co">#&gt; pop2  8.514706 0.000000  6.066176</span></span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a><span class="co">#&gt; pop3 12.595588 6.066176  0.000000</span></span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;unit_distance2&quot;)</span></span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a><span class="co">#&gt;           pop1     pop2      pop3</span></span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a><span class="co">#&gt; pop1  0.000000 8.514706 12.595588</span></span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a><span class="co">#&gt; pop2  8.514706 0.000000  6.066176</span></span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a><span class="co">#&gt; pop3 12.595588 6.066176  0.000000</span></span>
+<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;unit_size&quot;)</span></span>
+<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a><span class="co">#&gt; pop1 pop2 pop3 </span></span>
+<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a><span class="co">#&gt;    2    2    2 </span></span>
+<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;feature_center&quot;)</span></span>
+<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a><span class="co">#&gt;  loc1:100  loc1:102  loc1:104  loc2:200  loc2:202  loc2:204 </span></span>
+<span id="cb12-47"><a href="#cb12-47" tabindex="-1"></a><span class="co">#&gt; 0.6666667 0.6666667 0.6666667 0.5000000 0.6666667 0.8333333 </span></span>
+<span id="cb12-48"><a href="#cb12-48" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;feature_scale&quot;)</span></span>
+<span id="cb12-49"><a href="#cb12-49" tabindex="-1"></a><span class="co">#&gt;  loc1:100  loc1:102  loc1:104  loc2:200  loc2:202  loc2:204 </span></span>
+<span id="cb12-50"><a href="#cb12-50" tabindex="-1"></a><span class="co">#&gt; 0.8164966 0.8164966 0.8164966 0.5477226 0.8164966 0.7527727 </span></span>
+<span id="cb12-51"><a href="#cb12-51" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;retained_features&quot;)</span></span>
+<span id="cb12-52"><a href="#cb12-52" tabindex="-1"></a><span class="co">#&gt; [1] &quot;loc1:100&quot; &quot;loc1:102&quot; &quot;loc1:104&quot; &quot;loc2:200&quot; &quot;loc2:202&quot; &quot;loc2:204&quot;</span></span>
+<span id="cb12-53"><a href="#cb12-53" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;input&quot;)</span></span>
+<span id="cb12-54"><a href="#cb12-54" tabindex="-1"></a><span class="co">#&gt; [1] &quot;allele_calls&quot;</span></span>
+<span id="cb12-55"><a href="#cb12-55" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;imputed_allele_calls&quot;)</span></span>
+<span id="cb12-56"><a href="#cb12-56" tabindex="-1"></a><span class="co">#&gt; named integer(0)</span></span>
+<span id="cb12-57"><a href="#cb12-57" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;imputed_modal_alleles&quot;)</span></span>
+<span id="cb12-58"><a href="#cb12-58" tabindex="-1"></a><span class="co">#&gt; named character(0)</span></span>
+<span id="cb12-59"><a href="#cb12-59" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;level&quot;)</span></span>
+<span id="cb12-60"><a href="#cb12-60" tabindex="-1"></a><span class="co">#&gt; [1] &quot;population&quot;</span></span>
+<span id="cb12-61"><a href="#cb12-61" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;diagonal&quot;)</span></span>
+<span id="cb12-62"><a href="#cb12-62" tabindex="-1"></a><span class="co">#&gt; [1] &quot;within&quot;</span></span>
+<span id="cb12-63"><a href="#cb12-63" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalize&quot;)</span></span>
+<span id="cb12-64"><a href="#cb12-64" tabindex="-1"></a><span class="co">#&gt; [1] &quot;none&quot;</span></span>
+<span id="cb12-65"><a href="#cb12-65" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalizer&quot;)</span></span>
+<span id="cb12-66"><a href="#cb12-66" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div>
+<p><strong>How to read the output:</strong> the result is the same kind
+of population covariance as before. The <code>loci</code> vector has one
+entry per column of <code>alleles</code> and names the locus each allele
+copy belongs to; here the first two columns are <code>loc1</code> and
+the last two are <code>loc2</code>. A missing call is imputed to the
+most common (modal) allele observed at that locus, and the function
+reports how many calls it filled in.</p>
+<p>A modeling note for downstream Wishart fits. The effective degrees of
+freedom <code>nu</code> is the number of independent pieces of
+information in the covariance. For SNPs that is roughly the retained SNP
+count. For microsatellites it is safest to use the number of
+<strong>loci</strong>, because the allele frequencies within one locus
+are correlated (they sum to a constant) and so do not each count as
+independent. Report the value you use and check that conclusions hold
+across the plausible range.</p>
+</div>
+</div>
+<div id="from-covariance-to-distance" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> From covariance to
+distance</h1>
+<p>Some models want a distance matrix rather than a covariance.
+<code>dist_from_cov()</code> converts one to the other using the
+identity that relates a covariance to its implied squared Euclidean
+distances:</p>
+<p><span class="math display">\[D_{ij} = C_{ii} + C_{jj} - 2
+C_{ij}.\]</span></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">dist_from_cov</span>(S)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">round</span>(D, <span class="dv">3</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt;      deme1 deme2 deme3 deme4 deme5 deme6</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; [1,] 0.000 1.996 2.122 0.984 3.615 0.806</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; [2,] 1.996 0.000 2.977 2.483 2.282 1.722</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; [3,] 2.122 2.977 0.000 3.291 3.144 2.532</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [4,] 0.984 2.483 3.291 0.000 4.175 1.521</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; [5,] 3.615 2.282 3.144 4.175 0.000 3.671</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; [6,] 0.806 1.722 2.532 1.521 3.671 0.000</span></span></code></pre></div>
+<p><strong>How to read the output:</strong> <code>D</code> is a
+symmetric squared-distance matrix with a zero diagonal and non-negative
+off-diagonal entries. A larger value means two demes are farther apart
+in genetic space, the natural response for an isolation-by-distance or
+resistance model such as <code>terradish::mlpe()</code> or
+<code>terradish::generalized_wishart()</code>. Because <code>D</code> is
+built from <code>S</code>, the two describe the same structure: where
+the covariance is high, the distance is low.</p>
+<p>For biallelic data you can go straight from counts to distance with
+<code>dist_from_biallelic()</code>, a convenience wrapper for
+<code>dist_from_cov(cov_from_biallelic(Y, N))</code>.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>D2 <span class="ot">&lt;-</span> <span class="fu">dist_from_biallelic</span>(Y, <span class="at">N =</span> <span class="dv">40</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">all.equal</span>(D, D2)   <span class="co"># same as the two-step route above</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+<div id="directional-edge-covariates" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> Directional edge
+covariates</h1>
+<p>The last piece is what makes directed gene-flow models possible. A
+<strong>directional edge covariate</strong> assigns a value to each edge
+that flips sign when you traverse the edge the other way, so it can
+describe an asymmetry such as flow downhill or with a prevailing wind.
+The covariate is <strong>antisymmetric</strong>: the value from deme
+<code>a</code> to deme <code>b</code> is the negative of the value from
+<code>b</code> to <code>a</code>. <code>landgraph</code> builds two
+kinds.</p>
+<div id="gradient-of-a-scalar-potential" class="section level2" number="7.1">
+<h2><span class="header-section-number">7.1</span> Gradient of a scalar
+potential</h2>
+<p><code>edge_gradient()</code> takes a single value per deme (a
+<strong>scalar potential</strong> such as elevation) and returns the
+drop across each directed edge, <code>x_a - x_b</code>. Movement from
+high to low potential is the “downhill” direction. We use the sum of the
+coordinates as a stand-in elevation.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>elevation <span class="ot">&lt;-</span> coords[, <span class="st">&quot;x&quot;</span>] <span class="sc">+</span> coords[, <span class="st">&quot;y&quot;</span>]   <span class="co"># one value per deme</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>elevation</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; deme1 deme2 deme3 deme4 deme5 deme6 </span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt;     0     1     2     1     2     3</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>eg <span class="ot">&lt;-</span> <span class="fu">edge_gradient</span>(elevation, g)</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="fu">str</span>(eg)</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; List of 2</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;  $ edges: int [1:14, 1:2] 1 1 2 2 3 4 5 2 4 3 ...</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;dimnames&quot;)=List of 2</span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt;   .. ..$ : NULL</span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt;   .. ..$ : chr [1:2] &quot;a&quot; &quot;b&quot;</span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="co">#&gt;  $ d    : num [1:14] -1 -1 -1 -1 -1 -1 -1 1 1 1 ...</span></span></code></pre></div>
+<p><strong>How to read the output:</strong> <code>edge_gradient()</code>
+returns a list with two parts. <code>edges</code> is an integer matrix
+of <strong>directed</strong> edges; every undirected edge from the graph
+appears twice, once in each direction (columns <code>a</code> and
+<code>b</code> are the start and end deme). <code>d</code> is the
+matching vector of potential drops, <code>x_a - x_b</code>, one per
+directed edge. Because each edge appears in both directions, the second
+half of <code>d</code> is the exact negative of the first half. That
+sign flip is the antisymmetry, and it is what a directed model uses to
+tell “uphill” from “downhill.” A positive coefficient on this covariate
+in <code>terradish</code> directional models means movement speeds up as
+potential drops.</p>
+</div>
+<div id="projection-of-a-vector-flow-field" class="section level2" number="7.2">
+<h2><span class="header-section-number">7.2</span> Projection of a
+vector flow field</h2>
+<p><code>edge_gradient()</code> can only describe forces that point
+“downhill” from some potential. A real flow such as wind or current can
+also rotate, circling without any high or low point to descend from.
+<code>edge_flow()</code> captures that. It takes a <strong>vector
+field</strong> (an x-component and a y-component at each deme) and
+projects the average field along each edge onto the edge’s direction.
+The covariate for undirected edge <code>(a, b)</code> is</p>
+<p><span class="math display">\[c_{ab} = \tfrac{1}{2}(f_a + f_b) \cdot
+(xy_b - xy_a),\]</span></p>
+<p>the mean field on the edge dotted with the step from <code>a</code>
+to <code>b</code>. We build a counter-clockwise rotational field
+centered on the demes, the kind of pattern a scalar potential cannot
+represent.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>cen <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(g<span class="sc">$</span>vertex_coordinates)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>rotational <span class="ot">&lt;-</span> <span class="cf">function</span>(xy) <span class="fu">cbind</span>(<span class="sc">-</span>(xy[, <span class="dv">2</span>] <span class="sc">-</span> cen[<span class="dv">2</span>]), xy[, <span class="dv">1</span>] <span class="sc">-</span> cen[<span class="dv">1</span>])</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>circ <span class="ot">&lt;-</span> <span class="fu">edge_flow</span>(rotational, g)</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="fu">round</span>(circ, <span class="dv">3</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; deme1 deme1 deme2 deme2 deme3 deme4 deme5 </span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt;   0.5  -1.0   0.5   0.0   1.0  -0.5  -0.5</span></span></code></pre></div>
+<p><strong>How to read the output:</strong> <code>circ</code> has one
+entry per undirected edge in <code>g$edge_pairs</code>, in the same row
+order. The sign tells you whether the field pushes along the edge from
+<code>a</code> to <code>b</code> (positive) or from <code>b</code> to
+<code>a</code> (negative), and the magnitude is how strongly. The
+covariate is antisymmetric by construction: a downstream model applies
+<code>circ</code> to the <code>a -&gt; b</code> direction and its
+negative to <code>b -&gt; a</code>. Pass it straight to
+<code>dragonflow::dragon()</code> as <code>circulation = circ</code>.
+The <code>field</code> argument also accepts a two-column matrix of
+components in vertex order, or a two-layer
+<code>terra::SpatRaster</code> sampled at the deme coordinates; the
+function form used here is convenient when you can express the field
+analytically.</p>
+<p>The plot below draws the field as an arrow at each deme, over the
+graph. The arrows circle the center, which is exactly the rotational
+signal <code>edge_flow()</code> extracts and
+<code>edge_gradient()</code> would miss.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">par</span>(<span class="at">no.readonly =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>vc  <span class="ot">&lt;-</span> g<span class="sc">$</span>vertex_coordinates</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>fld <span class="ot">&lt;-</span> <span class="fu">rotational</span>(vc)</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="fu">plot</span>(vc, <span class="at">type =</span> <span class="st">&quot;n&quot;</span>, <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">xlab =</span> <span class="st">&quot;x&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>     <span class="at">xlim =</span> <span class="fu">range</span>(vc[, <span class="dv">1</span>]) <span class="sc">+</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.4</span>, <span class="fl">0.4</span>),</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>     <span class="at">ylim =</span> <span class="fu">range</span>(vc[, <span class="dv">2</span>]) <span class="sc">+</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.4</span>, <span class="fl">0.4</span>))</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="fu">segments</span>(vc[ep[, <span class="dv">1</span>], <span class="dv">1</span>], vc[ep[, <span class="dv">1</span>], <span class="dv">2</span>],</span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a>         vc[ep[, <span class="dv">2</span>], <span class="dv">1</span>], vc[ep[, <span class="dv">2</span>], <span class="dv">2</span>], <span class="at">col =</span> <span class="st">&quot;grey80&quot;</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="fu">arrows</span>(vc[, <span class="dv">1</span>], vc[, <span class="dv">2</span>],</span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>       vc[, <span class="dv">1</span>] <span class="sc">+</span> <span class="fl">0.3</span> <span class="sc">*</span> fld[, <span class="dv">1</span>], vc[, <span class="dv">2</span>] <span class="sc">+</span> <span class="fl">0.3</span> <span class="sc">*</span> fld[, <span class="dv">2</span>],</span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>       <span class="at">length =</span> <span class="fl">0.08</span>, <span class="at">col =</span> <span class="st">&quot;firebrick&quot;</span>)</span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a><span class="fu">points</span>(vc, <span class="at">pch =</span> <span class="dv">21</span>, <span class="at">bg =</span> <span class="st">&quot;steelblue&quot;</span>, <span class="at">cex =</span> <span class="fl">2.5</span>)</span></code></pre></div>
+<p><img role="img" aria-label="A counter-clockwise vector field drawn as arrows at each deme over the graph edges." src="data:image/png;base64,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" alt="A counter-clockwise vector field drawn as arrows at each deme over the graph edges." /></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">par</span>(op)</span></code></pre></div>
+<p><strong>How to read this plot:</strong> each red arrow is the flow
+vector at a deme; together they trace a counter-clockwise circulation.
+<code>edge_flow()</code> reads this field along each grey edge and
+returns the signed strength in <code>circ</code>. Where an arrow points
+along an edge, that edge gets a large covariate; where the flow crosses
+an edge sideways, the covariate is near zero.</p>
+</div>
+</div>
+<div id="quick-reference" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> Quick reference</h1>
+<p>The complete pipeline, from coordinates and molecular data to the
+inputs a downstream model consumes:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">library</span>(landgraph)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co"># 1. Build the spatial graph from deme coordinates</span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>g <span class="ot">&lt;-</span> <span class="fu">deme_graph</span>(coords, <span class="at">neighbours =</span> <span class="st">&quot;lattice&quot;</span>)    <span class="co"># or &quot;knn&quot; / &quot;delaunay&quot;</span></span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="co"># 2. Genetic covariance and distance from biallelic (SNP) counts</span></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">cov_from_biallelic</span>(Y, <span class="at">N =</span> <span class="dv">40</span>)                 <span class="co"># deme covariance</span></span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">dist_from_cov</span>(S)                              <span class="co"># squared genetic distance</span></span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">dist_from_biallelic</span>(Y, <span class="at">N =</span> <span class="dv">40</span>)                <span class="co"># the two steps in one call</span></span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>fst <span class="ot">&lt;-</span> <span class="fu">fst_from_biallelic</span>(Y, Nmat)                 <span class="co"># pairwise F_ST (N as a matrix)</span></span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a></span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a><span class="co"># 2b. Covariance from microsatellite / multivariate data</span></span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a>Sg <span class="ot">&lt;-</span> <span class="fu">cov_from_genetic_data</span>(x, <span class="at">groups =</span> groups)    <span class="co"># population covariance</span></span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a>Sg <span class="ot">&lt;-</span> <span class="fu">cov_from_genetic_data</span>(alleles, <span class="at">groups =</span> groups,</span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a>                            <span class="at">input =</span> <span class="st">&quot;allele_calls&quot;</span>,</span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a>                            <span class="at">loci =</span> <span class="fu">c</span>(<span class="st">&quot;loc1&quot;</span>, <span class="st">&quot;loc1&quot;</span>, <span class="st">&quot;loc2&quot;</span>, <span class="st">&quot;loc2&quot;</span>))</span>
+<span id="cb19-17"><a href="#cb19-17" tabindex="-1"></a></span>
+<span id="cb19-18"><a href="#cb19-18" tabindex="-1"></a><span class="co"># 3. Directional edge covariates for directed models</span></span>
+<span id="cb19-19"><a href="#cb19-19" tabindex="-1"></a>eg   <span class="ot">&lt;-</span> <span class="fu">edge_gradient</span>(elevation, g)                <span class="co"># downhill drop; eg$d per directed edge</span></span>
+<span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a>circ <span class="ot">&lt;-</span> <span class="fu">edge_flow</span>(rotational, g)                   <span class="co"># circulation per undirected edge</span></span>
+<span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a></span>
+<span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a><span class="co"># 4. Hand off downstream</span></span>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a><span class="co">#    terradish::wishart_covariance(S = S, ...)      # symmetric resistance</span></span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a><span class="co">#    dragonflow::dragon(..., circulation = circ)    # asymmetric gene flow</span></span></code></pre></div>
+</div>
+<div id="summary-of-key-functions" class="section level1" number="9">
+<h1><span class="header-section-number">9</span> Summary of key
+functions</h1>
+<table>
+<colgroup>
+<col width="52%" />
+<col width="47%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>deme_graph()</code></td>
+<td>Build a deme/landscape graph (vertices + undirected edges) from
+coordinates</td>
+</tr>
+<tr class="even">
+<td><code>cov_from_biallelic()</code></td>
+<td>Genetic covariance from biallelic (SNP) allele counts</td>
+</tr>
+<tr class="odd">
+<td><code>fst_from_biallelic()</code></td>
+<td>Pairwise F_ST from biallelic allele counts</td>
+</tr>
+<tr class="even">
+<td><code>cov_from_genetic_data()</code></td>
+<td>Covariance from multivariate or microsatellite data</td>
+</tr>
+<tr class="odd">
+<td><code>dist_from_cov()</code></td>
+<td>Convert a covariance matrix to a squared-distance matrix</td>
+</tr>
+<tr class="even">
+<td><code>dist_from_biallelic()</code></td>
+<td>Covariance-to-distance shortcut for biallelic counts</td>
+</tr>
+<tr class="odd">
+<td><code>edge_gradient()</code></td>
+<td>Directional covariate from the gradient of a scalar potential</td>
+</tr>
+<tr class="even">
+<td><code>edge_flow()</code></td>
+<td>Directional covariate from the projection of a vector flow
+field</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="see-also" class="section level1" number="10">
+<h1><span class="header-section-number">10</span> See also</h1>
+<ul>
+<li>The function help pages, for the full argument lists and return
+values: <code>?deme_graph</code>, <code>?cov_from_biallelic</code>,
+<code>?cov_from_genetic_data</code>, <code>?edge_gradient</code>, and
+<code>?edge_flow</code>.</li>
+<li><code>terradish</code>, for symmetric landscape resistance models
+that consume the covariance and distance matrices built here.</li>
+<li><code>dragonflow</code>, for asymmetric (directional) gene-flow
+models that consume the graph and the directional edge covariates from
+<code>edge_gradient()</code> and <code>edge_flow()</code>.</li>
+</ul>
+</div>
+<div id="references" class="section level1" number="11">
+<h1><span class="header-section-number">11</span> References</h1>
+<p>Bhatia G, Patterson N, Sankararaman S, Price AL. 2013. Estimating and
+interpreting F_ST: the impact of rare variants. Genome Research
+23(9):1514-1521. <a href="doi:10.1101/gr.154831.113" class="uri">doi:10.1101/gr.154831.113</a></p>
+<p>Dyer RJ, Nason JD. 2004. Population graphs: the graph theoretic shape
+of genetic structure. Molecular Ecology 13(7):1713-1727. <a href="doi:10.1111/j.1365-294X.2004.02177.x" class="uri">doi:10.1111/j.1365-294X.2004.02177.x</a></p>
+<p>Gower JC. 1966. Some distance properties of latent root and vector
+methods used in multivariate analysis. Biometrika 53(3-4):325-338. <a href="doi:10.1093/biomet/53.3-4.325" class="uri">doi:10.1093/biomet/53.3-4.325</a></p>
+<p>Yang J, Benyamin B, McEvoy BP, et al. 2010. Common SNPs explain a
+large proportion of the heritability for human height. Nature Genetics
+42(7):565-569. <a href="doi:10.1038/ng.608" class="uri">doi:10.1038/ng.608</a></p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
