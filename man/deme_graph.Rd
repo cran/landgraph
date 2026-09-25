@@ -33,11 +33,11 @@ An object of class \code{c("landgraph", "terradish_graph")} with
   \code{a < b}), and \code{n_vertices}.
 }
 \description{
-Builds the minimal spatial graph that DRAGON-style network methods consume: a
+Builds the minimal spatial graph that landscape-genetic network methods use: a
 set of vertex coordinates and an undirected edge list. For deme-scale problems
 (dozens to a few hundred nodes) this avoids the heavier raster / conductance
-graph builders, and the returned object is drop-in compatible with the graph
-consumed by \code{dragon} (in dragonflow) and with a \code{terradish_graph}.
+graph builders, and the returned object is interchangeable with a
+\code{terradish_graph}.
 }
 \examples{
 coords <- as.matrix(expand.grid(x = 0:4, y = 0:4))

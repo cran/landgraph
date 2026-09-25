@@ -1,0 +1,32 @@
+test_that("biallelic metadata distinguishes pooled and site centering", {
+  Y <- matrix(c(10, 4, 1, 5, 5, 3), 2, byrow = TRUE)
+  N <- matrix(c(20, 20, 10, 10, 10, 6), 2, byrow = TRUE)
+  pooled <- colSums(Y) / colSums(N)
+  P <- matrix(pooled, nrow(Y), ncol(Y), byrow = TRUE)
+  Z <- (Y - N * P) / sqrt(N * P * (1 - P))
+  covariance <- cov_from_biallelic(Y, N)
+  expect_equal(covariance[, ], tcrossprod(Z) / ncol(Y))
+  expect_equal(attr(covariance, "diagonal"), "normalized_dosage")
+  expect_equal(attr(covariance, "centered"), "pooled_allele_frequency")
+  expect_gt(max(abs(rowSums(covariance))), 0.1)
+
+  equal <- cov_from_biallelic(Y, N = 20)
+  expect_equal(attr(equal, "centered"), "sites")
+  expect_equal(rowSums(equal), rep(0, nrow(Y)), tolerance = 1e-12)
+})
+
+test_that("diagonal replacement is recorded without claiming site centering", {
+  x <- matrix(c(0, -1, 0, 1, 1, -1, 1, 1, 2, -1, 2, 1),
+              ncol = 2, byrow = TRUE)
+  groups <- rep(1:3, each = 2)
+  gower <- cov_from_genetic_data(x, groups, scale = FALSE, diagonal = "gower")
+  default <- cov_from_genetic_data(x, groups, scale = FALSE)
+  expect_identical(default, gower)
+  within <- cov_from_genetic_data(x, groups, scale = FALSE, diagonal = "within")
+  expect_equal(attr(gower, "centered"), "sites")
+  expect_equal(unname(rowSums(gower)), rep(0, 3), tolerance = 1e-12)
+  expect_equal(attr(within, "diagonal"), "within")
+  expect_equal(attr(within, "centered"), "sites_before_diagonal_replacement")
+  expect_gt(max(abs(rowSums(within))), 0.1)
+  expect_equal(within[lower.tri(within)], gower[lower.tri(gower)])
+})

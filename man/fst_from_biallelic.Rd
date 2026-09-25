@@ -33,8 +33,9 @@ The result is not guaranteed to lie in \eqn{[0, 1]} for every pair; small
 negative values can arise from sampling noise in very similar populations.
 
 To use F\eqn{_{ST}} as the response in \code{terradish}, pass the
-matrix directly to the formula left-hand side with \code{mlpe} or
-\code{generalized_wishart}.
+matrix directly to the formula left-hand side with \code{mlpe}.
+This ratio estimator is not a Wishart response and has no Wishart degrees
+of freedom. Use covariance-derived squared distances for Wishart models.
 }
 \examples{
 Y <- matrix(c(2, 1, 0,

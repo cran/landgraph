@@ -369,9 +369,6 @@ potential</a></li>
 field</a></li>
 </ul></li>
 <li><a href="#quick-reference" id="toc-quick-reference"><span class="toc-section-number">8</span> Quick reference</a></li>
-<li><a href="#summary-of-key-functions" id="toc-summary-of-key-functions"><span class="toc-section-number">9</span> Summary of key functions</a></li>
-<li><a href="#see-also" id="toc-see-also"><span class="toc-section-number">10</span> See also</a></li>
-<li><a href="#references" id="toc-references"><span class="toc-section-number">11</span> References</a></li>
 </ul>
 </div>
 
@@ -380,12 +377,10 @@ field</a></li>
 <p><code>landgraph</code> holds the shared inputs that landscape-genetic
 network methods consume: a lightweight spatial graph, genetic covariance
 and distance matrices built from molecular data, and antisymmetric
-directional edge covariates. It is the common base beneath two
-downstream packages: <code>terradish</code>, which estimates symmetric
-landscape resistance, and <code>dragonflow</code>, which estimates
-asymmetric (directional) gene flow. You can also use
-<code>landgraph</code> on its own whenever you need a graph, a genetic
-covariance, or a directional covariate.</p>
+directional edge covariates. It is the common base beneath
+<code>terradish</code>, which estimates symmetric landscape resistance.
+You can also use <code>landgraph</code> on its own whenever you need a
+graph, a genetic covariance, or a directional covariate.</p>
 <p>This vignette walks the whole pipeline end to end. You will build a
 graph from deme coordinates, turn molecular data into a covariance
 matrix and a distance matrix, read what those matrices mean, and
@@ -468,9 +463,8 @@ vignette unambiguous.</li>
 <code>nrow(vertex_coordinates)</code>.</li>
 </ul>
 <p>The returned object carries class
-<code>c(&quot;landgraph&quot;, &quot;terradish_graph&quot;)</code>, so it drops directly
-into <code>dragonflow::dragon()</code> and is interchangeable with a
-<code>terradish::conductance_surface()</code> result.</p>
+<code>c(&quot;landgraph&quot;, &quot;terradish_graph&quot;)</code>, so it is interchangeable
+with a <code>terradish::conductance_surface()</code> result.</p>
 <p>A quick plot makes the adjacency concrete. Edges are drawn first so
 the deme markers sit on top.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">par</span>(<span class="at">no.readonly =</span> <span class="cn">TRUE</span>)</span>
@@ -620,7 +614,11 @@ enough.</p>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; deme3 -0.132 -0.398  1.308 -0.472 -0.029 -0.276</span></span>
 <span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; deme4  0.303 -0.285 -0.472  1.039 -0.679  0.095</span></span>
 <span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; deme5 -0.643  0.184 -0.029 -0.679  1.778 -0.610</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; deme6  0.208 -0.088 -0.276  0.095 -0.610  0.672</span></span></code></pre></div>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; deme6  0.208 -0.088 -0.276  0.095 -0.610  0.672</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;diagonal&quot;)</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; [1] &quot;normalized_dosage&quot;</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centered&quot;)</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;sites&quot;</span></span></code></pre></div>
 <p><strong>How to read the output:</strong> <code>S</code> is a
 symmetric deme-by-deme covariance matrix on the scale of normalized
 allele frequencies. Internally the function standardizes each locus to
@@ -705,9 +703,9 @@ feature matrix for three populations of two individuals each.</p>
 <span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>Sg <span class="ot">&lt;-</span> <span class="fu">cov_from_genetic_data</span>(x, <span class="at">groups =</span> groups)</span>
 <span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="fu">round</span>(Sg, <span class="dv">3</span>)</span>
 <span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt;        pop1   pop2   pop3</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; pop1  0.625 -0.429  0.067</span></span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; pop2 -0.429  0.882 -1.605</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; pop3  0.067 -1.605  0.625</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; pop1  0.362 -0.429  0.067</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; pop2 -0.429  2.034 -1.605</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; pop3  0.067 -1.605  1.538</span></span>
 <span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centroids&quot;)</span></span>
 <span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;       feature1   feature2</span></span>
 <span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; pop1 -0.559017 -0.2214037</span></span>
@@ -747,11 +745,13 @@ feature matrix for three populations of two individuals each.</p>
 <span id="cb10-52"><a href="#cb10-52" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;level&quot;)</span></span>
 <span id="cb10-53"><a href="#cb10-53" tabindex="-1"></a><span class="co">#&gt; [1] &quot;population&quot;</span></span>
 <span id="cb10-54"><a href="#cb10-54" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;diagonal&quot;)</span></span>
-<span id="cb10-55"><a href="#cb10-55" tabindex="-1"></a><span class="co">#&gt; [1] &quot;within&quot;</span></span>
-<span id="cb10-56"><a href="#cb10-56" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalize&quot;)</span></span>
-<span id="cb10-57"><a href="#cb10-57" tabindex="-1"></a><span class="co">#&gt; [1] &quot;none&quot;</span></span>
-<span id="cb10-58"><a href="#cb10-58" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalizer&quot;)</span></span>
-<span id="cb10-59"><a href="#cb10-59" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div>
+<span id="cb10-55"><a href="#cb10-55" tabindex="-1"></a><span class="co">#&gt; [1] &quot;gower&quot;</span></span>
+<span id="cb10-56"><a href="#cb10-56" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centered&quot;)</span></span>
+<span id="cb10-57"><a href="#cb10-57" tabindex="-1"></a><span class="co">#&gt; [1] &quot;sites&quot;</span></span>
+<span id="cb10-58"><a href="#cb10-58" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalize&quot;)</span></span>
+<span id="cb10-59"><a href="#cb10-59" tabindex="-1"></a><span class="co">#&gt; [1] &quot;none&quot;</span></span>
+<span id="cb10-60"><a href="#cb10-60" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalizer&quot;)</span></span>
+<span id="cb10-61"><a href="#cb10-61" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div>
 <p><strong>How to read the output:</strong> <code>Sg</code> is a
 population-by-population covariance. Off the diagonal it behaves like
 the SNP covariance above: positive means two populations sit on the same
@@ -768,7 +768,7 @@ you can inspect or reuse them. The most useful are listed below.</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">attr</span>(Sg, <span class="st">&quot;level&quot;</span>)            <span class="co"># &quot;population&quot; once groups have replication</span></span>
 <span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;population&quot;</span></span>
 <span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">attr</span>(Sg, <span class="st">&quot;diagonal&quot;</span>)         <span class="co"># the diagonal rule actually applied</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;within&quot;</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;gower&quot;</span></span>
 <span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">attr</span>(Sg, <span class="st">&quot;within_variance&quot;</span>)  <span class="co"># the within-population variances on the diagonal</span></span>
 <span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt;      pop1      pop2      pop3 </span></span>
 <span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; 0.6250000 0.8823529 0.6250000</span></span>
@@ -852,9 +852,9 @@ centering.</p>
 <span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>)</span>
 <span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="fu">round</span>(Sm, <span class="dv">3</span>)</span>
 <span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt;        pop1   pop2   pop3</span></span>
-<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; pop1  3.917 -1.328 -2.689</span></span>
-<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; pop2 -1.328  3.917 -0.512</span></span>
-<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; pop3 -2.689 -0.512  4.049</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; pop1  4.017 -1.328 -2.689</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; pop2 -1.328  1.841 -0.512</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; pop3 -2.689 -0.512  3.201</span></span>
 <span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centroids&quot;)</span></span>
 <span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt;        loc1:100   loc1:102   loc1:104 loc2:200   loc2:202   loc2:204</span></span>
 <span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; pop1  1.0206207 -0.2041241 -0.8164966        0  1.0206207 -1.1070186</span></span>
@@ -898,11 +898,13 @@ centering.</p>
 <span id="cb12-59"><a href="#cb12-59" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;level&quot;)</span></span>
 <span id="cb12-60"><a href="#cb12-60" tabindex="-1"></a><span class="co">#&gt; [1] &quot;population&quot;</span></span>
 <span id="cb12-61"><a href="#cb12-61" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;diagonal&quot;)</span></span>
-<span id="cb12-62"><a href="#cb12-62" tabindex="-1"></a><span class="co">#&gt; [1] &quot;within&quot;</span></span>
-<span id="cb12-63"><a href="#cb12-63" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalize&quot;)</span></span>
-<span id="cb12-64"><a href="#cb12-64" tabindex="-1"></a><span class="co">#&gt; [1] &quot;none&quot;</span></span>
-<span id="cb12-65"><a href="#cb12-65" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalizer&quot;)</span></span>
-<span id="cb12-66"><a href="#cb12-66" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div>
+<span id="cb12-62"><a href="#cb12-62" tabindex="-1"></a><span class="co">#&gt; [1] &quot;gower&quot;</span></span>
+<span id="cb12-63"><a href="#cb12-63" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centered&quot;)</span></span>
+<span id="cb12-64"><a href="#cb12-64" tabindex="-1"></a><span class="co">#&gt; [1] &quot;sites&quot;</span></span>
+<span id="cb12-65"><a href="#cb12-65" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalize&quot;)</span></span>
+<span id="cb12-66"><a href="#cb12-66" tabindex="-1"></a><span class="co">#&gt; [1] &quot;none&quot;</span></span>
+<span id="cb12-67"><a href="#cb12-67" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;normalizer&quot;)</span></span>
+<span id="cb12-68"><a href="#cb12-68" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div>
 <p><strong>How to read the output:</strong> the result is the same kind
 of population covariance as before. The <code>loci</code> vector has one
 entry per column of <code>alleles</code> and names the locus each allele
@@ -937,7 +939,11 @@ C_{ij}.\]</span></p>
 <span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; [3,] 2.122 2.977 0.000 3.291 3.144 2.532</span></span>
 <span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [4,] 0.984 2.483 3.291 0.000 4.175 1.521</span></span>
 <span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; [5,] 3.615 2.282 3.144 4.175 0.000 3.671</span></span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; [6,] 0.806 1.722 2.532 1.521 3.671 0.000</span></span></code></pre></div>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; [6,] 0.806 1.722 2.532 1.521 3.671 0.000</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;diagonal&quot;)</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt; [1] &quot;normalized_dosage&quot;</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;centered&quot;)</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;sites&quot;</span></span></code></pre></div>
 <p><strong>How to read the output:</strong> <code>D</code> is a
 symmetric squared-distance matrix with a zero diagonal and non-negative
 off-diagonal entries. A larger value means two demes are farther apart
@@ -1028,13 +1034,11 @@ order. The sign tells you whether the field pushes along the edge from
 <code>a</code> (negative), and the magnitude is how strongly. The
 covariate is antisymmetric by construction: a downstream model applies
 <code>circ</code> to the <code>a -&gt; b</code> direction and its
-negative to <code>b -&gt; a</code>. Pass it straight to
-<code>dragonflow::dragon()</code> as <code>circulation = circ</code>.
-The <code>field</code> argument also accepts a two-column matrix of
-components in vertex order, or a two-layer
-<code>terra::SpatRaster</code> sampled at the deme coordinates; the
-function form used here is convenient when you can express the field
-analytically.</p>
+negative to <code>b -&gt; a</code>. The <code>field</code> argument also
+accepts a two-column matrix of components in vertex order, or a
+two-layer <code>terra::SpatRaster</code> sampled at the deme
+coordinates; the function form used here is convenient when you can
+express the field analytically.</p>
 <p>The plot below draws the field as an arrow at each deme, over the
 graph. The arrows circle the center, which is exactly the rotational
 signal <code>edge_flow()</code> extracts and
@@ -1088,87 +1092,45 @@ inputs a downstream model consumes:</p>
 <span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a>circ <span class="ot">&lt;-</span> <span class="fu">edge_flow</span>(rotational, g)                   <span class="co"># circulation per undirected edge</span></span>
 <span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a></span>
 <span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a><span class="co"># 4. Hand off downstream</span></span>
-<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a><span class="co">#    terradish::wishart_covariance(S = S, ...)      # symmetric resistance</span></span>
-<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a><span class="co">#    dragonflow::dragon(..., circulation = circ)    # asymmetric gene flow</span></span></code></pre></div>
-</div>
-<div id="summary-of-key-functions" class="section level1" number="9">
-<h1><span class="header-section-number">9</span> Summary of key
-functions</h1>
-<table>
-<colgroup>
-<col width="52%" />
-<col width="47%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>Function</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>deme_graph()</code></td>
-<td>Build a deme/landscape graph (vertices + undirected edges) from
-coordinates</td>
-</tr>
-<tr class="even">
-<td><code>cov_from_biallelic()</code></td>
-<td>Genetic covariance from biallelic (SNP) allele counts</td>
-</tr>
-<tr class="odd">
-<td><code>fst_from_biallelic()</code></td>
-<td>Pairwise F_ST from biallelic allele counts</td>
-</tr>
-<tr class="even">
-<td><code>cov_from_genetic_data()</code></td>
-<td>Covariance from multivariate or microsatellite data</td>
-</tr>
-<tr class="odd">
-<td><code>dist_from_cov()</code></td>
-<td>Convert a covariance matrix to a squared-distance matrix</td>
-</tr>
-<tr class="even">
-<td><code>dist_from_biallelic()</code></td>
-<td>Covariance-to-distance shortcut for biallelic counts</td>
-</tr>
-<tr class="odd">
-<td><code>edge_gradient()</code></td>
-<td>Directional covariate from the gradient of a scalar potential</td>
-</tr>
-<tr class="even">
-<td><code>edge_flow()</code></td>
-<td>Directional covariate from the projection of a vector flow
-field</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div id="see-also" class="section level1" number="10">
-<h1><span class="header-section-number">10</span> See also</h1>
-<ul>
-<li>The function help pages, for the full argument lists and return
-values: <code>?deme_graph</code>, <code>?cov_from_biallelic</code>,
-<code>?cov_from_genetic_data</code>, <code>?edge_gradient</code>, and
-<code>?edge_flow</code>.</li>
-<li><code>terradish</code>, for symmetric landscape resistance models
-that consume the covariance and distance matrices built here.</li>
-<li><code>dragonflow</code>, for asymmetric (directional) gene-flow
-models that consume the graph and the directional edge covariates from
-<code>edge_gradient()</code> and <code>edge_flow()</code>.</li>
-</ul>
-</div>
-<div id="references" class="section level1" number="11">
-<h1><span class="header-section-number">11</span> References</h1>
-<p>Bhatia G, Patterson N, Sankararaman S, Price AL. 2013. Estimating and
-interpreting F_ST: the impact of rare variants. Genome Research
-23(9):1514-1521. <a href="doi:10.1101/gr.154831.113" class="uri">doi:10.1101/gr.154831.113</a></p>
-<p>Dyer RJ, Nason JD. 2004. Population graphs: the graph theoretic shape
-of genetic structure. Molecular Ecology 13(7):1713-1727. <a href="doi:10.1111/j.1365-294X.2004.02177.x" class="uri">doi:10.1111/j.1365-294X.2004.02177.x</a></p>
-<p>Gower JC. 1966. Some distance properties of latent root and vector
-methods used in multivariate analysis. Biometrika 53(3-4):325-338. <a href="doi:10.1093/biomet/53.3-4.325" class="uri">doi:10.1093/biomet/53.3-4.325</a></p>
-<p>Yang J, Benyamin B, McEvoy BP, et al. 2010. Common SNPs explain a
-large proportion of the heritability for human height. Nature Genetics
-42(7):565-569. <a href="doi:10.1038/ng.608" class="uri">doi:10.1038/ng.608</a></p>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a><span class="co">#    terradish::wishart_covariance(S = S, ...)      # symmetric resistance```</span></span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a></span>
+<span id="cb19-25"><a href="#cb19-25" tabindex="-1"></a><span class="co"># Summary of key functions</span></span>
+<span id="cb19-26"><a href="#cb19-26" tabindex="-1"></a></span>
+<span id="cb19-27"><a href="#cb19-27" tabindex="-1"></a><span class="sc">|</span> Function <span class="sc">|</span> Purpose <span class="sc">|</span></span>
+<span id="cb19-28"><a href="#cb19-28" tabindex="-1"></a><span class="er">|</span><span class="sc">----------</span><span class="er">|</span><span class="sc">---------</span><span class="er">|</span></span>
+<span id="cb19-29"><a href="#cb19-29" tabindex="-1"></a><span class="er">|</span> <span class="st">`</span><span class="at">deme_graph()</span><span class="st">`</span> <span class="sc">|</span> Build a deme<span class="sc">/</span>landscape <span class="fu">graph</span> (vertices <span class="sc">+</span> undirected edges) from coordinates <span class="sc">|</span></span>
+<span id="cb19-30"><a href="#cb19-30" tabindex="-1"></a><span class="er">|</span> <span class="st">`</span><span class="at">cov_from_biallelic()</span><span class="st">`</span> <span class="sc">|</span> Genetic covariance from <span class="fu">biallelic</span> (SNP) allele counts <span class="sc">|</span></span>
+<span id="cb19-31"><a href="#cb19-31" tabindex="-1"></a><span class="er">|</span> <span class="st">`</span><span class="at">fst_from_biallelic()</span><span class="st">`</span> <span class="sc">|</span> Pairwise F_ST from biallelic allele counts <span class="sc">|</span></span>
+<span id="cb19-32"><a href="#cb19-32" tabindex="-1"></a><span class="er">|</span> <span class="st">`</span><span class="at">cov_from_genetic_data()</span><span class="st">`</span> <span class="sc">|</span> Covariance from multivariate or microsatellite data <span class="sc">|</span></span>
+<span id="cb19-33"><a href="#cb19-33" tabindex="-1"></a><span class="er">|</span> <span class="st">`</span><span class="at">dist_from_cov()</span><span class="st">`</span> <span class="sc">|</span> Convert a covariance matrix to a squared<span class="sc">-</span>distance matrix <span class="sc">|</span></span>
+<span id="cb19-34"><a href="#cb19-34" tabindex="-1"></a><span class="er">|</span> <span class="st">`</span><span class="at">dist_from_biallelic()</span><span class="st">`</span> <span class="sc">|</span> Covariance<span class="sc">-</span>to<span class="sc">-</span>distance shortcut <span class="cf">for</span> biallelic counts <span class="sc">|</span></span>
+<span id="cb19-35"><a href="#cb19-35" tabindex="-1"></a><span class="er">|</span> <span class="st">`</span><span class="at">edge_gradient()</span><span class="st">`</span> <span class="sc">|</span> Directional covariate from the gradient of a scalar potential <span class="sc">|</span></span>
+<span id="cb19-36"><a href="#cb19-36" tabindex="-1"></a><span class="er">|</span> <span class="st">`</span><span class="at">edge_flow()</span><span class="st">`</span> <span class="sc">|</span> Directional covariate from the projection of a vector flow field <span class="sc">|</span></span>
+<span id="cb19-37"><a href="#cb19-37" tabindex="-1"></a></span>
+<span id="cb19-38"><a href="#cb19-38" tabindex="-1"></a><span class="co"># See also</span></span>
+<span id="cb19-39"><a href="#cb19-39" tabindex="-1"></a></span>
+<span id="cb19-40"><a href="#cb19-40" tabindex="-1"></a><span class="sc">-</span> The <span class="cf">function</span> help pages, <span class="cf">for</span> the full argument lists and return values<span class="sc">:</span></span>
+<span id="cb19-41"><a href="#cb19-41" tabindex="-1"></a>  <span class="st">`</span><span class="at">?deme_graph</span><span class="st">`</span>, <span class="st">`</span><span class="at">?cov_from_biallelic</span><span class="st">`</span>, <span class="st">`</span><span class="at">?cov_from_genetic_data</span><span class="st">`</span>,</span>
+<span id="cb19-42"><a href="#cb19-42" tabindex="-1"></a>  <span class="st">`</span><span class="at">?edge_gradient</span><span class="st">`</span>, and <span class="st">`</span><span class="at">?edge_flow</span><span class="st">`</span>.</span>
+<span id="cb19-43"><a href="#cb19-43" tabindex="-1"></a><span class="sc">-</span> <span class="st">`</span><span class="at">terradish</span><span class="st">`</span>, <span class="cf">for</span> symmetric landscape resistance models that consume the</span>
+<span id="cb19-44"><a href="#cb19-44" tabindex="-1"></a>  covariance and distance matrices built here.</span>
+<span id="cb19-45"><a href="#cb19-45" tabindex="-1"></a><span class="co"># References</span></span>
+<span id="cb19-46"><a href="#cb19-46" tabindex="-1"></a></span>
+<span id="cb19-47"><a href="#cb19-47" tabindex="-1"></a>Bhatia G, Patterson N, Sankararaman S, Price AL. <span class="fl">2013.</span> Estimating and</span>
+<span id="cb19-48"><a href="#cb19-48" tabindex="-1"></a>interpreting F_ST<span class="sc">:</span> the impact of rare variants. Genome Research <span class="dv">23</span>(<span class="dv">9</span>)<span class="sc">:</span><span class="dv">1514</span><span class="fl">-1521.</span></span>
+<span id="cb19-49"><a href="#cb19-49" tabindex="-1"></a>doi<span class="sc">:</span><span class="fl">10.1101</span><span class="sc">/</span>gr.<span class="fl">154831.113</span></span>
+<span id="cb19-50"><a href="#cb19-50" tabindex="-1"></a></span>
+<span id="cb19-51"><a href="#cb19-51" tabindex="-1"></a>Dyer RJ, Nason JD. <span class="fl">2004.</span> Population graphs<span class="sc">:</span> the graph theoretic shape of genetic</span>
+<span id="cb19-52"><a href="#cb19-52" tabindex="-1"></a>structure. Molecular Ecology <span class="dv">13</span>(<span class="dv">7</span>)<span class="sc">:</span><span class="dv">1713</span><span class="fl">-1727.</span></span>
+<span id="cb19-53"><a href="#cb19-53" tabindex="-1"></a>doi<span class="sc">:</span><span class="fl">10.1111</span><span class="sc">/</span>j<span class="fl">.1365</span><span class="dv">-294</span>X.<span class="dv">2004</span>.<span class="fl">02177.</span>x</span>
+<span id="cb19-54"><a href="#cb19-54" tabindex="-1"></a></span>
+<span id="cb19-55"><a href="#cb19-55" tabindex="-1"></a>Gower JC. <span class="fl">1966.</span> Some distance properties of latent root and vector methods used</span>
+<span id="cb19-56"><a href="#cb19-56" tabindex="-1"></a><span class="cf">in</span> multivariate analysis. Biometrika <span class="dv">53</span>(<span class="dv">3-4</span>)<span class="sc">:</span><span class="dv">325</span><span class="fl">-338.</span></span>
+<span id="cb19-57"><a href="#cb19-57" tabindex="-1"></a>doi<span class="sc">:</span><span class="fl">10.1093</span><span class="sc">/</span>biomet<span class="sc">/</span><span class="fl">53.3-4.325</span></span>
+<span id="cb19-58"><a href="#cb19-58" tabindex="-1"></a></span>
+<span id="cb19-59"><a href="#cb19-59" tabindex="-1"></a>Yang J, Benyamin B, McEvoy BP, et al. <span class="fl">2010.</span> Common SNPs explain a large</span>
+<span id="cb19-60"><a href="#cb19-60" tabindex="-1"></a>proportion of the heritability <span class="cf">for</span> human height. Nature Genetics <span class="dv">42</span>(<span class="dv">7</span>)<span class="sc">:</span><span class="dv">565</span><span class="fl">-569.</span></span>
+<span id="cb19-61"><a href="#cb19-61" tabindex="-1"></a>doi<span class="sc">:</span><span class="fl">10.1038</span><span class="sc">/</span>ng<span class="fl">.608</span></span></code></pre></div>
 </div>
 
 

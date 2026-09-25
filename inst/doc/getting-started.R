@@ -153,6 +153,43 @@ par(op)
 # circ <- edge_flow(rotational, g)                   # circulation per undirected edge
 # 
 # # 4. Hand off downstream
-# #    terradish::wishart_covariance(S = S, ...)      # symmetric resistance
-# #    dragonflow::dragon(..., circulation = circ)    # asymmetric gene flow
+# #    terradish::wishart_covariance(S = S, ...)      # symmetric resistance```
+# 
+# # Summary of key functions
+# 
+# | Function | Purpose |
+# |----------|---------|
+# | `deme_graph()` | Build a deme/landscape graph (vertices + undirected edges) from coordinates |
+# | `cov_from_biallelic()` | Genetic covariance from biallelic (SNP) allele counts |
+# | `fst_from_biallelic()` | Pairwise F_ST from biallelic allele counts |
+# | `cov_from_genetic_data()` | Covariance from multivariate or microsatellite data |
+# | `dist_from_cov()` | Convert a covariance matrix to a squared-distance matrix |
+# | `dist_from_biallelic()` | Covariance-to-distance shortcut for biallelic counts |
+# | `edge_gradient()` | Directional covariate from the gradient of a scalar potential |
+# | `edge_flow()` | Directional covariate from the projection of a vector flow field |
+# 
+# # See also
+# 
+# - The function help pages, for the full argument lists and return values:
+#   `?deme_graph`, `?cov_from_biallelic`, `?cov_from_genetic_data`,
+#   `?edge_gradient`, and `?edge_flow`.
+# - `terradish`, for symmetric landscape resistance models that consume the
+#   covariance and distance matrices built here.
+# # References
+# 
+# Bhatia G, Patterson N, Sankararaman S, Price AL. 2013. Estimating and
+# interpreting F_ST: the impact of rare variants. Genome Research 23(9):1514-1521.
+# doi:10.1101/gr.154831.113
+# 
+# Dyer RJ, Nason JD. 2004. Population graphs: the graph theoretic shape of genetic
+# structure. Molecular Ecology 13(7):1713-1727.
+# doi:10.1111/j.1365-294X.2004.02177.x
+# 
+# Gower JC. 1966. Some distance properties of latent root and vector methods used
+# in multivariate analysis. Biometrika 53(3-4):325-338.
+# doi:10.1093/biomet/53.3-4.325
+# 
+# Yang J, Benyamin B, McEvoy BP, et al. 2010. Common SNPs explain a large
+# proportion of the heritability for human height. Nature Genetics 42(7):565-569.
+# doi:10.1038/ng.608
 

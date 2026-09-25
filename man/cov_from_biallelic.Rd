@@ -44,7 +44,11 @@ as monomorphic when its pooled frequency is within \code{tol} of 0 or 1.}
 \value{
 A symmetric positive-semidefinite numeric matrix of pairwise
   genetic covariances.  Row and column names match those of \code{Y} when
-  present.
+  present. The \code{diagonal} attribute is \code{"normalized_dosage"}.
+  The \code{centered} attribute is \code{"sites"} when chromosome counts
+  are equal across rows at every retained locus; otherwise it is
+  \code{"pooled_allele_frequency"}. These labels describe the construction
+  without changing the returned numerical values.
 }
 \description{
 Computes a sample covariance matrix from counts of the derived allele across
@@ -64,6 +68,13 @@ The function returns \eqn{Z Z^\top / L}, where \eqn{L} is the number of
 retained (polymorphic) loci.  The resulting matrix is the sample covariance
 in normalized allele-frequency space, analogous to the genomic relationship
 matrix of Yang et al. (2010).
+
+Per-locus standardization gives greater weight to rare variants, including
+their contribution to the diagonal. Filter loci by minor allele frequency
+before constructing the covariance and report the filtering rule. Unequal
+chromosome counts also imply unequal sampling variance. With unequal counts
+across rows, pooled-frequency centering does not generally produce zero
+row sums in the covariance.
 
 To convert the covariance to a pairwise distance matrix, use
 \code{\link{dist_from_cov}}.  For non-biallelic or multiallelic data, use

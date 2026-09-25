@@ -1,10 +1,10 @@
 #' Lightweight deme / landscape graph from coordinates
 #'
-#' Builds the minimal spatial graph that DRAGON-style network methods consume: a
+#' Builds the minimal spatial graph that landscape-genetic network methods use: a
 #' set of vertex coordinates and an undirected edge list. For deme-scale problems
 #' (dozens to a few hundred nodes) this avoids the heavier raster / conductance
-#' graph builders, and the returned object is drop-in compatible with the graph
-#' consumed by \code{dragon} (in dragonflow) and with a \code{terradish_graph}.
+#' graph builders, and the returned object is interchangeable with a
+#' \code{terradish_graph}.
 #'
 #' @param coords A two-column numeric matrix or data frame of node (deme)
 #'   coordinates, one row per node (columns x, y).

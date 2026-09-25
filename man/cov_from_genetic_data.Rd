@@ -12,7 +12,7 @@ cov_from_genetic_data(
   center = TRUE,
   scale = TRUE,
   tol = sqrt(.Machine$double.eps),
-  diagonal = c("auto", "within", "gower"),
+  diagonal = c("gower", "within", "auto"),
   normalize = c("none", "features")
 )
 }
@@ -45,8 +45,10 @@ deviation? Default \code{TRUE}. Constant features are dropped.}
 \item{tol}{Tolerance used to identify constant features when
 \code{scale = TRUE}.}
 
-\item{diagonal}{How to set the returned covariance diagonal. \code{"auto"}
-uses \code{"within"} for grouped population data with replication and
+\item{diagonal}{How to set the returned covariance diagonal. The default,
+\code{"gower"}, retains the centered covariance for both grouped and
+individual-level data. The legacy \code{"auto"} option uses
+\code{"within"} for grouped population data with replication and
 \code{"gower"} for individual-level data. \code{"within"} replaces the
 Gower covariance diagonal with the within-population genetic variance,
 following the population-graph covariance construction. \code{"gower"}
@@ -78,6 +80,9 @@ A symmetric numeric matrix with one row and column per individual
     features were dropped.}
   \item{\code{level}}{Either \code{"individual"} or \code{"population"}.}
   \item{\code{diagonal}}{The \code{diagonal} method actually used.}
+  \item{\code{centered}}{\code{"sites"} for the Gower covariance, or
+    \code{"sites_before_diagonal_replacement"} when the within-population
+    diagonal replaces the centered covariance diagonal.}
   \item{\code{normalizer}}{Divisor applied to the covariance and distances
     (\code{1} for \code{normalize = "none"}, number of retained features for
     \code{normalize = "features"}).}
@@ -125,10 +130,13 @@ partial-correlation filtering in Dyer-style population graph workflows.
 Missing values are not currently supported because common microsatellite
 imputation choices can change the resulting covariance.
 
-If the grouped Dyer-style result is used as \code{S} in
-\code{wishart_covariance}, inspect the eigenvalues first. The
-within-population diagonal is useful for population-graph workflows, but it
-does not guarantee a positive-definite covariance matrix for every dataset.
+The within-population diagonal is on a different scale from the covariance
+among population centroids and is unsuitable for a Wishart likelihood.
+Use \code{diagonal = "gower"} for that purpose. Replacing the diagonal
+also removes the guarantee of positive semidefiniteness and zero row sums.
+Unequal group sizes imply unequal sampling variance. Standardizing allele
+features gives greater weight to rare variants; filter by minor allele
+frequency before constructing the covariance and report the filtering rule.
 }
 \examples{
 # Numeric allele dosage / feature matrix

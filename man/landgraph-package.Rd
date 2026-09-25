@@ -16,7 +16,7 @@ covariance and distance from biallelic or multiallelic data
 \code{\link{fst_from_biallelic}}, \code{\link{dist_from_cov}},
 \code{\link{dist_from_biallelic}}); and antisymmetric per-edge directional
 covariate builders (\code{\link{edge_gradient}}, \code{\link{edge_flow}}). Used
-by the symmetric (terradish) and asymmetric (dragonflow) network methods.
+by the terradish network methods.
 }
 \seealso{
 Useful links:

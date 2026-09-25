@@ -17,12 +17,12 @@ a two-column coordinate matrix returning such a two-column field.}
 }
 \value{
 A numeric vector with one entry per undirected edge in
-  \code{data$edge_pairs}, ready to pass as \code{dragon(circulation = )}.
+  \code{data$edge_pairs}, ready to pass to a directed gene-flow model.
 }
 \description{
 Builds an antisymmetric per-edge covariate from a spatial vector field (for
-example wind or current), for the \code{circulation} argument of
-\code{dragon}. \code{\link{edge_gradient}} takes the gradient of a scalar
+example wind or current), for use in directed gene-flow models.
+\code{\link{edge_gradient}} takes the gradient of a scalar
 potential, which is curl-free and yields a reversible generator whose
 stationary distribution is collinear with the potential. A vector flow field
 can carry a rotational/curl component instead, making the directed generator
@@ -33,7 +33,7 @@ covariate.
 For undirected edge \eqn{(a, b)} the covariate is the mean field along the edge
 projected onto the edge direction,
 \eqn{c_{ab} = \tfrac{1}{2}(f_a + f_b) \cdot (xy_b - xy_a)}; it is antisymmetric
-by construction, and \code{dragon} applies \eqn{-c_{ab}} to the reverse
+by construction, and a directed model applies \eqn{-c_{ab}} to the reverse
 edge \eqn{b \to a}.
 }
 \examples{
@@ -43,5 +43,5 @@ field <- matrix(c(1, 0), nrow = nrow(coords), ncol = 2, byrow = TRUE)
 edge_flow(field, g)
 }
 \seealso{
-\code{\link{edge_gradient}}, \code{dragon}
+\code{\link{edge_gradient}}
 }

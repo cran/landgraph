@@ -20,8 +20,9 @@
 #' negative values can arise from sampling noise in very similar populations.
 #'
 #' To use F\eqn{_{ST}} as the response in \code{terradish}, pass the
-#' matrix directly to the formula left-hand side with \code{mlpe} or
-#' \code{generalized_wishart}.
+#' matrix directly to the formula left-hand side with \code{mlpe}.
+#' This ratio estimator is not a Wishart response and has no Wishart degrees
+#' of freedom. Use covariance-derived squared distances for Wishart models.
 #'
 #' @references
 #' Bhatia G, Patterson N, Sankararaman S, Price AL. 2013. Estimating and
@@ -109,6 +110,13 @@ fst_from_biallelic <- function(Y, N)
 #' in normalized allele-frequency space, analogous to the genomic relationship
 #' matrix of Yang et al. (2010).
 #'
+#' Per-locus standardization gives greater weight to rare variants, including
+#' their contribution to the diagonal. Filter loci by minor allele frequency
+#' before constructing the covariance and report the filtering rule. Unequal
+#' chromosome counts also imply unequal sampling variance. With unequal counts
+#' across rows, pooled-frequency centering does not generally produce zero
+#' row sums in the covariance.
+#'
 #' To convert the covariance to a pairwise distance matrix, use
 #' \code{\link{dist_from_cov}}.  For non-biallelic or multiallelic data, use
 #' \code{\link{cov_from_genetic_data}}.
@@ -121,7 +129,11 @@ fst_from_biallelic <- function(Y, N)
 #'
 #' @return A symmetric positive-semidefinite numeric matrix of pairwise
 #'   genetic covariances.  Row and column names match those of \code{Y} when
-#'   present.
+#'   present. The \code{diagonal} attribute is \code{"normalized_dosage"}.
+#'   The \code{centered} attribute is \code{"sites"} when chromosome counts
+#'   are equal across rows at every retained locus; otherwise it is
+#'   \code{"pooled_allele_frequency"}. These labels describe the construction
+#'   without changing the returned numerical values.
 #'
 #' @seealso \code{\link{cov_from_genetic_data}}, \code{\link{fst_from_biallelic}},
 #'   \code{\link{dist_from_biallelic}}, \code{\link{dist_from_cov}},
@@ -200,7 +212,14 @@ cov_from_biallelic <- function(Y,
   Frm <- matrix(Fr, nrow(Y), ncol(Y), byrow = TRUE)
   Y  <- (Y - N * Frm) / sqrt(N * Frm * (1 - Frm))
 
-  Y %*% t(Y) / ncol(Y)
+  covariance <- Y %*% t(Y) / ncol(Y)
+  attr(covariance, "diagonal") <- "normalized_dosage"
+  # The denominator preserves site centering only for equal counts per locus.
+  equal_counts <- all(vapply(seq_len(ncol(N)), function(j)
+    all(N[, j] == N[1L, j]), logical(1)))
+  attr(covariance, "centered") <- if (equal_counts) "sites" else
+    "pooled_allele_frequency"
+  covariance
 }
 
 .biallelic_sample_size_matrix <- function(N, Y, ploidy)
@@ -264,8 +283,10 @@ cov_from_biallelic <- function(Y,
 #'   deviation? Default \code{TRUE}. Constant features are dropped.
 #' @param tol Tolerance used to identify constant features when
 #'   \code{scale = TRUE}.
-#' @param diagonal How to set the returned covariance diagonal. \code{"auto"}
-#'   uses \code{"within"} for grouped population data with replication and
+#' @param diagonal How to set the returned covariance diagonal. The default,
+#'   \code{"gower"}, retains the centered covariance for both grouped and
+#'   individual-level data. The legacy \code{"auto"} option uses
+#'   \code{"within"} for grouped population data with replication and
 #'   \code{"gower"} for individual-level data. \code{"within"} replaces the
 #'   Gower covariance diagonal with the within-population genetic variance,
 #'   following the population-graph covariance construction. \code{"gower"}
@@ -312,10 +333,13 @@ cov_from_biallelic <- function(Y,
 #' Missing values are not currently supported because common microsatellite
 #' imputation choices can change the resulting covariance.
 #'
-#' If the grouped Dyer-style result is used as \code{S} in
-#' \code{wishart_covariance}, inspect the eigenvalues first. The
-#' within-population diagonal is useful for population-graph workflows, but it
-#' does not guarantee a positive-definite covariance matrix for every dataset.
+#' The within-population diagonal is on a different scale from the covariance
+#' among population centroids and is unsuitable for a Wishart likelihood.
+#' Use \code{diagonal = "gower"} for that purpose. Replacing the diagonal
+#' also removes the guarantee of positive semidefiniteness and zero row sums.
+#' Unequal group sizes imply unequal sampling variance. Standardizing allele
+#' features gives greater weight to rare variants; filter by minor allele
+#' frequency before constructing the covariance and report the filtering rule.
 #'
 #' @references
 #' Gower JC. 1966. Some distance properties of latent root and vector methods
@@ -350,6 +374,9 @@ cov_from_biallelic <- function(Y,
 #'     features were dropped.}
 #'   \item{\code{level}}{Either \code{"individual"} or \code{"population"}.}
 #'   \item{\code{diagonal}}{The \code{diagonal} method actually used.}
+#'   \item{\code{centered}}{\code{"sites"} for the Gower covariance, or
+#'     \code{"sites_before_diagonal_replacement"} when the within-population
+#'     diagonal replaces the centered covariance diagonal.}
 #'   \item{\code{normalizer}}{Divisor applied to the covariance and distances
 #'     (\code{1} for \code{normalize = "none"}, number of retained features for
 #'     \code{normalize = "features"}).}
@@ -394,7 +421,7 @@ cov_from_genetic_data <- function(x,
                                   center = TRUE,
                                   scale = TRUE,
                                   tol = sqrt(.Machine$double.eps),
-                                  diagonal = c("auto", "within", "gower"),
+                                  diagonal = c("gower", "within", "auto"),
                                   normalize = c("none", "features"))
 {
   input <- match.arg(input)
@@ -544,6 +571,8 @@ cov_from_genetic_data <- function(x,
   }
   attr(covariance, "level") <- level
   attr(covariance, "diagonal") <- diagonal
+  attr(covariance, "centered") <- if (identical(diagonal, "gower"))
+    "sites" else "sites_before_diagonal_replacement"
   attr(covariance, "normalize") <- normalize
   attr(covariance, "normalizer") <- normalizer
 

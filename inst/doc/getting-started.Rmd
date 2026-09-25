@@ -25,9 +25,8 @@ knitr::opts_chunk$set(
 `landgraph` holds the shared inputs that landscape-genetic network methods
 consume: a lightweight spatial graph, genetic covariance and distance matrices
 built from molecular data, and antisymmetric directional edge covariates. It is
-the common base beneath two downstream packages: `terradish`, which estimates
-symmetric landscape resistance, and `dragonflow`, which estimates asymmetric
-(directional) gene flow. You can also use `landgraph` on its own whenever you
+the common base beneath `terradish`, which estimates symmetric landscape
+resistance. You can also use `landgraph` on its own whenever you
 need a graph, a genetic covariance, or a directional covariate.
 
 This vignette walks the whole pipeline end to end. You will build a graph from
@@ -89,7 +88,7 @@ g$edge_pairs
 - `n_vertices` is the deme count, a convenience copy of `nrow(vertex_coordinates)`.
 
 The returned object carries class `c("landgraph", "terradish_graph")`, so it
-drops directly into `dragonflow::dragon()` and is interchangeable with a
+is interchangeable with a
 `terradish::conductance_surface()` result.
 
 A quick plot makes the adjacency concrete. Edges are drawn first so the deme
@@ -423,8 +422,7 @@ round(circ, 3)
 pushes along the edge from `a` to `b` (positive) or from `b` to `a` (negative),
 and the magnitude is how strongly. The covariate is antisymmetric by
 construction: a downstream model applies `circ` to the `a -> b` direction and
-its negative to `b -> a`. Pass it straight to `dragonflow::dragon()` as
-`circulation = circ`. The `field` argument also accepts a two-column matrix of
+its negative to `b -> a`. The `field` argument also accepts a two-column matrix of
 components in vertex order, or a two-layer `terra::SpatRaster` sampled at the
 deme coordinates; the function form used here is convenient when you can express
 the field analytically.
@@ -484,9 +482,7 @@ eg   <- edge_gradient(elevation, g)                # downhill drop; eg$d per dir
 circ <- edge_flow(rotational, g)                   # circulation per undirected edge
 
 # 4. Hand off downstream
-#    terradish::wishart_covariance(S = S, ...)      # symmetric resistance
-#    dragonflow::dragon(..., circulation = circ)    # asymmetric gene flow
-```
+#    terradish::wishart_covariance(S = S, ...)      # symmetric resistance```
 
 # Summary of key functions
 
@@ -508,10 +504,6 @@ circ <- edge_flow(rotational, g)                   # circulation per undirected 
   `?edge_gradient`, and `?edge_flow`.
 - `terradish`, for symmetric landscape resistance models that consume the
   covariance and distance matrices built here.
-- `dragonflow`, for asymmetric (directional) gene-flow models that consume the
-  graph and the directional edge covariates from `edge_gradient()` and
-  `edge_flow()`.
-
 # References
 
 Bhatia G, Patterson N, Sankararaman S, Price AL. 2013. Estimating and
