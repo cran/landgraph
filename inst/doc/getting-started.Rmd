@@ -87,9 +87,10 @@ g$edge_pairs
   unambiguous.
 - `n_vertices` is the deme count, a convenience copy of `nrow(vertex_coordinates)`.
 
-The returned object carries class `c("landgraph", "terradish_graph")`, so it
-is interchangeable with a
-`terradish::conductance_surface()` result.
+The returned object carries class `c("landgraph", "terradish_graph")`. The
+class lets `edge_gradient()` and `edge_flow()` accept the object. It lacks the
+covariates, Laplacian, and Cholesky factor that `terradish::terradish()` needs;
+build fitting graphs with `terradish::conductance_surface()`.
 
 A quick plot makes the adjacency concrete. Edges are drawn first so the deme
 markers sit on top.
@@ -101,25 +102,25 @@ plot(g$vertex_coordinates, type = "n", asp = 1, xlab = "x", ylab = "y")
 ep <- g$edge_pairs
 segments(g$vertex_coordinates[ep[, 1], 1], g$vertex_coordinates[ep[, 1], 2],
          g$vertex_coordinates[ep[, 2], 1], g$vertex_coordinates[ep[, 2], 2],
-         col = "grey60")
+         col = "gray60")
 points(g$vertex_coordinates, pch = 21, bg = "steelblue", cex = 3)
 text(g$vertex_coordinates, labels = seq_len(nrow(coords)), col = "white")
 par(op)
 ```
 
 **How to read this plot:** each blue circle is a deme, numbered by its row in
-`coords`. A grey line is an edge in `edge_pairs`. Rook adjacency gives the seven
+`coords`. A gray line is an edge in `edge_pairs`. Rook adjacency gives the seven
 edges you see: the within-row horizontal links and the between-row vertical
 links, with no diagonals.
 
-## Choosing the neighbourhood
+## Choosing the neighborhood
 
 The `neighbours` argument selects how edges are drawn. The three options trade
 off assumptions about your sampling layout.
 
 | Value | What it does | When to use it |
 |-------|--------------|----------------|
-| `"lattice"` | Rook adjacency on a regular grid; add diagonals with `queen = TRUE` | Demes lie on an integer grid with uniform spacing |
+| `"lattice"` | Rook adjacency on a regular grid; add diagonals with `queen = TRUE` | Demes lie on a regular grid with uniform spacing |
 | `"knn"` | Joins each deme to its `k` nearest neighbors, then symmetrizes | Irregularly placed demes; `k` controls connectivity |
 | `"delaunay"` | The Delaunay triangulation (needs the `deldir` package) | Irregular demes, when you want a planar, parameter-free graph |
 
@@ -133,7 +134,7 @@ rather than failing silently.
 
 ```{r graph-knn}
 g_knn <- deme_graph(coords, neighbours = "knn", k = 2)
-nrow(g_knn$edge_pairs)   # edge count under 2-nearest-neighbour adjacency
+nrow(g_knn$edge_pairs)   # edge count under 2-nearest-neighbor adjacency
 ```
 
 # Genetic covariance from biallelic (SNP) data
@@ -180,12 +181,12 @@ S <- cov_from_biallelic(Y, N = 40)
 round(S, 3)
 ```
 
-**How to read the output:** `S` is a symmetric deme-by-deme covariance matrix on
-the scale of normalized allele frequencies. Internally the function standardizes
-each locus to the pooled allele frequency across demes, so each SNP contributes
-on a comparable scale, then averages the cross-products over loci (the genomic
-relationship matrix of Yang et al. 2010). Read the entries as relatedness in
-allele-frequency space:
+**How to read the output:** `S` is a symmetric deme-by-deme covariance matrix of
+normalized allele counts. Internally the function standardizes each locus to the
+pooled allele frequency across demes, so each SNP contributes on a comparable
+scale, then averages the cross-products over loci (the genomic relationship
+matrix of Yang et al. 2010). Read the entries as relatedness in allele-frequency
+space:
 
 - A **diagonal** entry is a deme's variance, how far its standardized allele
   frequencies sit from the pooled mean. Larger means more distinctive.
@@ -194,8 +195,13 @@ allele-frequency space:
   similar); negative means they deviate oppositely (differentiated).
 
 The matrix is positive semi-definite up to numerical tolerance, and row and
-column names are carried through from `Y`. This is exactly the response `S` that
-`terradish::wishart_covariance()` expects.
+column names are carried through from `Y`. The two attributes printed below the
+matrix record how it was built. The function standardizes counts, not
+frequencies, so the entries grow with the haploid sample size. Every deme here
+was scored at 40 chromosomes, so `S / 40` gives the standardized
+allele-frequency covariance that `terradish` fits. Do not divide by a common
+`N` when sample sizes differ; the demes then carry unequal sampling variance
+that a common nugget does not absorb.
 
 A locus that is **monomorphic** (fixed at frequency 0 or 1 across all demes)
 carries no information and cannot be standardized. By default such loci are
@@ -208,16 +214,16 @@ For a more classical summary of differentiation, `fst_from_biallelic()` returns
 pairwise F_ST, the proportion of total genetic variation that is due to
 differences between demes rather than within them. It uses the
 ratio-of-averages estimator of Bhatia et al. (2013), which combines information
-across loci before taking the ratio. This function needs `N` as a full matrix.
+across loci before taking the ratio. `N` takes the same forms as in
+`cov_from_biallelic()`, so a single number works here.
 
 ```{r fst}
-Nmat <- matrix(40, n_demes, n_snp)
-fst <- fst_from_biallelic(Y, Nmat)
+fst <- fst_from_biallelic(Y, N = 40)
 round(fst, 4)
 ```
 
-**How to read the output:** `fst` is a symmetric matrix with a zero diagonal
-(a deme has no differentiation from itself). Each off-diagonal entry is the
+**How to read the output:** `fst` is a symmetric matrix named by the demes, with
+a zero diagonal (a deme has no differentiation from itself). Each off-diagonal entry is the
 pairwise F_ST between two demes: 0 means the pair is genetically
 indistinguishable, and larger positive values mean stronger differentiation.
 F_ST is already a proportion, so no back-transformation is needed.
@@ -252,18 +258,17 @@ x <- matrix(c(0, 1,
 groups <- rep(c("pop1", "pop2", "pop3"), each = 2)
 
 Sg <- cov_from_genetic_data(x, groups = groups)
-round(Sg, 3)
+round(Sg[, ], 3)   # Sg[, ] drops the attributes for a clean printout
 ```
 
 **How to read the output:** `Sg` is a population-by-population covariance. Off
 the diagonal it behaves like the SNP covariance above: positive means two
-populations sit on the same side of the overall mean in feature space. The
-diagonal, however, is special here. Because these populations have replication
-(two individuals each), `cov_from_genetic_data()` defaults to
-`diagonal = "within"`, which replaces each diagonal entry with that population's
-**within-population genetic variance**, the spread of its members in feature
-space. This matches the covariance used before partial-correlation filtering in
-population-graph workflows.
+populations sit on the same side of the overall mean in feature space. Because
+`cov_from_genetic_data()` defaults to `diagonal = "gower"`, the diagonal holds
+each population's variance on the same scale as the covariances, rows sum to
+zero, and the matrix is positive semidefinite, as a Wishart likelihood
+requires. Population-graph workflows instead use `diagonal = "within"`, whose
+diagonal is on another scale and does not suit Wishart models.
 
 The function attaches the intermediate quantities as attributes, so you can
 inspect or reuse them. The most useful are listed below.
@@ -271,27 +276,29 @@ inspect or reuse them. The most useful are listed below.
 ```{r multi-attrs}
 attr(Sg, "level")            # "population" once groups have replication
 attr(Sg, "diagonal")         # the diagonal rule actually applied
-attr(Sg, "within_variance")  # the within-population variances on the diagonal
+attr(Sg, "within_variance")  # fills the diagonal only with diagonal = "within"
 attr(Sg, "unit_size")        # number of individuals per population
 ```
 
 | Attribute | What it holds |
 |-----------|---------------|
 | `level` | `"individual"` or `"population"` |
-| `diagonal` | The diagonal rule used: `"within"` or `"gower"` |
-| `within_variance` | Within-population variance per group (the `"within"` diagonal) |
+| `diagonal` | The diagonal rule used: `"gower"` or `"within"` |
+| `within_variance` | Within-population variance per group; fills the diagonal only with `diagonal = "within"` |
 | `centroids` | Population centroids in feature space |
 | `centroid_distance2` | Squared distances among centroids |
 | `unit_size` | Individuals per group |
 | `retained_features` | Features kept after constant ones were dropped |
 
-The `diagonal` argument controls this behavior directly. `"auto"` (the default)
-uses `"within"` when groups have replication and `"gower"` otherwise. Force
-`"gower"` to keep the plain double-centered diagonal, or `"within"` to require
-the within-population variance. Two more arguments shape the feature space
-before centering: `center` and `scale` (both `TRUE` by default) standardize each
-feature, and `normalize = "features"` divides the result by the number of
-retained features so its scale does not grow with marker count.
+The `diagonal` argument controls this behavior directly. `"gower"` (the
+default) keeps the double-centered diagonal; `"within"` substitutes
+within-population variance; `"auto"` restores the default used before 0.0.3.
+Two more arguments shape the feature space before centering. `center` and
+`scale` (both `TRUE` by default) standardize each feature. Centering leaves the
+covariance unchanged, while scaling gives rare alleles the same variance as
+common ones and so more relative weight. `normalize = "features"` divides the
+result by the number of retained allele features so its scale does not grow
+with marker count; that divisor is not `nu`.
 
 ## Microsatellite allele calls
 
@@ -314,7 +321,7 @@ Sm <- cov_from_genetic_data(
   input  = "allele_calls",
   loci   = c("loc1", "loc1", "loc2", "loc2")
 )
-round(Sm, 3)
+round(Sm[, ], 3)
 ```
 
 **How to read the output:** the result is the same kind of population covariance
@@ -322,14 +329,16 @@ as before. The `loci` vector has one entry per column of `alleles` and names the
 locus each allele copy belongs to; here the first two columns are `loc1` and the
 last two are `loc2`. A missing call is imputed to the most common (modal) allele
 observed at that locus, and the function reports how many calls it filled in.
+Modal imputation shrinks distances, so report it. Code missing calls as `NA`:
+the function reads codes such as 0 or -9 as real alleles.
 
-A modeling note for downstream Wishart fits. The effective degrees of freedom
-`nu` is the number of independent pieces of information in the covariance. For
-SNPs that is roughly the retained SNP count. For microsatellites it is safest to
-use the number of **loci**, because the allele frequencies within one locus are
-correlated (they sum to a constant) and so do not each count as independent.
-Report the value you use and check that conclusions hold across the plausible
-range.
+A modeling note for downstream Wishart fits. Wishart models in `terradish`,
+`terradish::wishart_covariance()` and `terradish::generalized_wishart()`, need
+`nu`, an effective-information value that you supply. `cov_from_genetic_data()`
+does not compute it, and the number of SNPs, loci, or allele features does not
+supply it: linked loci share population history, so they carry far less
+independent information than their count suggests. Hold `nu` fixed across
+compared models and report sensitivity with `terradish::terradish_rescale_nu()`.
 
 # From covariance to distance
 
@@ -345,11 +354,14 @@ round(D, 3)
 ```
 
 **How to read the output:** `D` is a symmetric squared-distance matrix with a
-zero diagonal and non-negative off-diagonal entries. A larger value means two
+zero diagonal and non-negative off-diagonal entries, named by the demes. It
+keeps the `diagonal` and `centered` attributes of `S`. A larger value means two
 demes are farther apart in genetic space, the natural response for an
 isolation-by-distance or resistance model such as `terradish::mlpe()` or
 `terradish::generalized_wishart()`. Because `D` is built from `S`, the two
 describe the same structure: where the covariance is high, the distance is low.
+`D` inherits the count scale of `S`, so with 40 chromosomes per deme the
+`terradish` response `dist_from_cov(S / 40)` equals `D / 40`.
 
 For biallelic data you can go straight from counts to distance with
 `dist_from_biallelic()`, a convenience wrapper for
@@ -357,7 +369,8 @@ For biallelic data you can go straight from counts to distance with
 
 ```{r dist-wrap}
 D2 <- dist_from_biallelic(Y, N = 40)
-all.equal(D, D2)   # same as the two-step route above
+all.equal(D, D2)                     # same as the two-step route above
+all.equal(dist_from_cov(S / 40), D / 40)   # frequency scale for terradish
 ```
 
 # Directional edge covariates
@@ -391,8 +404,9 @@ start and end deme). `d` is the matching vector of potential drops, `x_a - x_b`,
 one per directed edge. Because each edge appears in both directions, the second
 half of `d` is the exact negative of the first half. That sign flip is the
 antisymmetry, and it is what a directed model uses to tell "uphill" from
-"downhill." A positive coefficient on this covariate in `terradish` directional
-models means movement speeds up as potential drops.
+"downhill." The covariate is positive from high to low potential. It serves
+directional gene-flow models; `terradish` fits symmetric resistance and does
+not use it.
 
 ## Projection of a vector flow field
 
@@ -440,7 +454,7 @@ plot(vc, type = "n", asp = 1, xlab = "x", ylab = "y",
      xlim = range(vc[, 1]) + c(-0.4, 0.4),
      ylim = range(vc[, 2]) + c(-0.4, 0.4))
 segments(vc[ep[, 1], 1], vc[ep[, 1], 2],
-         vc[ep[, 2], 1], vc[ep[, 2], 2], col = "grey80")
+         vc[ep[, 2], 1], vc[ep[, 2], 2], col = "gray80")
 arrows(vc[, 1], vc[, 2],
        vc[, 1] + 0.3 * fld[, 1], vc[, 2] + 0.3 * fld[, 2],
        length = 0.08, col = "firebrick")
@@ -450,7 +464,7 @@ par(op)
 
 **How to read this plot:** each red arrow is the flow vector at a deme; together
 they trace a counter-clockwise circulation. `edge_flow()` reads this field along
-each grey edge and returns the signed strength in `circ`. Where an arrow points
+each gray edge and returns the signed strength in `circ`. Where an arrow points
 along an edge, that edge gets a large covariate; where the flow crosses an edge
 sideways, the covariate is near zero.
 
@@ -469,10 +483,10 @@ g <- deme_graph(coords, neighbours = "lattice")    # or "knn" / "delaunay"
 S <- cov_from_biallelic(Y, N = 40)                 # deme covariance
 D <- dist_from_cov(S)                              # squared genetic distance
 D <- dist_from_biallelic(Y, N = 40)                # the two steps in one call
-fst <- fst_from_biallelic(Y, Nmat)                 # pairwise F_ST (N as a matrix)
+fst <- fst_from_biallelic(Y, N = 40)               # pairwise F_ST (any N form)
 
 # 2b. Covariance from microsatellite / multivariate data
-Sg <- cov_from_genetic_data(x, groups = groups)    # population covariance
+Sg <- cov_from_genetic_data(x, groups = groups)    # population covariance, Gower diagonal
 Sg <- cov_from_genetic_data(alleles, groups = groups,
                             input = "allele_calls",
                             loci = c("loc1", "loc1", "loc2", "loc2"))
@@ -481,8 +495,10 @@ Sg <- cov_from_genetic_data(alleles, groups = groups,
 eg   <- edge_gradient(elevation, g)                # downhill drop; eg$d per directed edge
 circ <- edge_flow(rotational, g)                   # circulation per undirected edge
 
-# 4. Hand off downstream
-#    terradish::wishart_covariance(S = S, ...)      # symmetric resistance```
+# 4. Hand off downstream (equal N: divide by N for the frequency scale)
+#    terradish fits the response S / 40 (or dist_from_cov(S / 40))
+#    with nu supplied by you; see terradish::terradish_rescale_nu()
+```
 
 # Summary of key functions
 
@@ -500,10 +516,13 @@ circ <- edge_flow(rotational, g)                   # circulation per undirected 
 # See also
 
 - The function help pages, for the full argument lists and return values:
-  `?deme_graph`, `?cov_from_biallelic`, `?cov_from_genetic_data`,
+  `?deme_graph`, `?cov_from_biallelic`, `?fst_from_biallelic`,
+  `?cov_from_genetic_data`, `?dist_from_cov`, `?dist_from_biallelic`,
   `?edge_gradient`, and `?edge_flow`.
 - `terradish`, for symmetric landscape resistance models that consume the
-  covariance and distance matrices built here.
+  covariance and distance matrices built here; start with
+  `vignette("getting-started", package = "terradish")`.
+
 # References
 
 Bhatia G, Patterson N, Sankararaman S, Price AL. 2013. Estimating and

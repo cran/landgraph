@@ -37,52 +37,69 @@ column. For a diploid microsatellite matrix with two columns per locus, the
 two columns for each locus should have the same \code{loci} value.}
 
 \item{center}{Should feature columns be centered by their global mean before
-covariance calculation? Default \code{TRUE}.}
+covariance calculation? Default \code{TRUE}. The covariance depends only
+on differences among units, so centering changes only the
+\code{centroids}, \code{unit_features}, and \code{feature_center}
+attributes.}
 
 \item{scale}{Should feature columns be divided by their global standard
-deviation? Default \code{TRUE}. Constant features are dropped.}
+deviation? Default \code{TRUE}. Scaling divides each feature by its
+standard deviation, so rare alleles get the same variance as common ones
+and therefore more relative weight. Constant features are dropped with a
+warning.}
 
 \item{tol}{Tolerance used to identify constant features when
 \code{scale = TRUE}.}
 
-\item{diagonal}{How to set the returned covariance diagonal. The default,
-\code{"gower"}, retains the centered covariance for both grouped and
-individual-level data. The legacy \code{"auto"} option uses
-\code{"within"} for grouped population data with replication and
-\code{"gower"} for individual-level data. \code{"within"} replaces the
-Gower covariance diagonal with the within-population genetic variance,
-following the population-graph covariance construction. \code{"gower"}
-leaves the double-centered distance diagonal unchanged.}
+\item{diagonal}{How to set the returned covariance diagonal.
+\code{"gower"} (default) keeps the double-centered diagonal, so every
+entry shares one scale; use it for Wishart models. \code{"within"}
+substitutes summed within-population variances, as in population graphs;
+terradish warns when it receives one. \code{"auto"} restores the default
+used before 0.0.3: \code{"within"} for grouped data with replication and
+\code{"gower"} otherwise.}
 
 \item{normalize}{Should covariance scale be normalized? \code{"none"} returns
 sums over retained features. \code{"features"} divides the covariance,
 squared distances, and within-population variances by the number of retained
-features.}
+features. The divisor counts expanded allele features, not loci, and is
+not \code{nu}.}
 }
 \value{
 A symmetric numeric matrix with one row and column per individual
   (when \code{groups = NULL}) or population (when \code{groups} is
   supplied).  The matrix is positive semi-definite up to numerical
   tolerance, except when \code{diagonal = "within"} is used (see Details).
-  The following attributes are attached:
+  The following attributes are attached. For a result \code{S}, use
+  \code{S[, ]} to view the matrix without attributes.
 \describe{
-  \item{\code{centroids}}{Feature matrix of population centroids (or
-    individual feature vectors when ungrouped).}
-  \item{\code{centroid_distance2}}{Squared Euclidean distance matrix among
-    centroids.}
-  \item{\code{within_variance}}{Named vector of within-population variances
-    (only when \code{groups} is supplied and some populations have \eqn{\geq
-    2} individuals).}
-  \item{\code{unit_size}}{Named integer vector of group sizes.}
+  \item{\code{centroids}, \code{unit_features}}{Feature matrix of
+    population centroids (or individual feature vectors when ungrouped),
+    one row per returned unit. The two attributes hold the same matrix.}
+  \item{\code{centroid_distance2}, \code{unit_distance2}}{Squared Euclidean
+    distance matrix among the rows of \code{centroids}, divided by
+    \code{normalizer}. The two attributes hold the same matrix.}
+  \item{\code{within_variance}}{Named vector of summed within-population
+    feature variances, divided by \code{normalizer}. Attached whenever
+    \code{groups} is supplied, with 0 for single-member groups. It fills
+    the diagonal only when \code{diagonal = "within"}.}
+  \item{\code{unit_size}}{Named vector of group sizes: numeric when
+    \code{groups} is supplied, integer (all 1) when ungrouped.}
   \item{\code{feature_center}, \code{feature_scale}}{Centering and scaling
     constants applied to each retained feature.}
   \item{\code{retained_features}}{Names of the features kept after constant
     features were dropped.}
+  \item{\code{input}}{The \code{input} format used.}
+  \item{\code{imputed_allele_calls}, \code{imputed_modal_alleles}}{Only for
+    \code{input = "allele_calls"}: the number of imputed calls per locus
+    and the modal allele used to fill them, for loci with missing calls
+    (zero-length when no call was missing).}
   \item{\code{level}}{Either \code{"individual"} or \code{"population"}.}
   \item{\code{diagonal}}{The \code{diagonal} method actually used.}
   \item{\code{centered}}{\code{"sites"} for the Gower covariance, or
     \code{"sites_before_diagonal_replacement"} when the within-population
     diagonal replaces the centered covariance diagonal.}
+  \item{\code{normalize}}{The \code{normalize} option used.}
   \item{\code{normalizer}}{Divisor applied to the covariance and distances
     (\code{1} for \code{normalize = "none"}, number of retained features for
     \code{normalize = "features"}).}
@@ -97,24 +114,14 @@ SNP dosage, PCA score, or other numeric encodings.
 The function first obtains a numeric feature matrix. Microsatellite data can
 be supplied as allele calls by setting \code{input = "allele_calls"}; these are
 converted to allele dosage columns, one column per locus-allele combination.
-Missing allele calls are imputed to the modal observed allele within each
-locus, with a message reporting the number of imputed calls.
 
-For Wishart models, the \code{nu} argument is the effective degrees of
-freedom in the empirical covariance.  With biallelic SNPs, each retained
-polymorphic SNP contributes one independent standardized allele-frequency
-column, so \code{nu} is usually the retained SNP count (reduced for linkage
-disequilibrium).  With microsatellites, use the number of loci \eqn{L} as
-the conservative default: allele frequencies within a locus are correlated
-(they sum to a constant), so the locus is the natural unit of information in
-population genetics.  \eqn{\sum_l (K_l - 1)}, where \eqn{K_l} is the
-number of observed alleles at locus \eqn{l}, is an upper bound that assumes
-within-locus alleles are independent; this assumption is not generally
-satisfied, and using it can yield over-confident standard errors and
-model-selection statistics.  The true effective \eqn{\nu} for microsatellite
-data lies somewhere between \eqn{L} and \eqn{\sum_l (K_l - 1)}.  Report the
-value used and conduct a sensitivity analysis across that range.  See
-\code{wishart_covariance} for the full explanation.
+Wishart models in terradish, \code{terradish::wishart_covariance()} and
+\code{terradish::generalized_wishart()}, need \code{nu}, an
+effective-information value that you supply. This function does not compute
+it, and the number of SNPs, loci, or allele features does not supply it:
+linked loci share population history, so they carry far less independent
+information than their count suggests. Hold \code{nu} fixed across compared
+models and report sensitivity with \code{terradish::terradish_rescale_nu()}.
 
 If \code{groups = NULL}, rows of the processed feature matrix are used
 directly and squared Euclidean distances among individuals are transformed to
@@ -127,8 +134,12 @@ diagonal is replaced by the sum of within-population feature variances. This
 matches the covariance construction used before population-graph
 partial-correlation filtering in Dyer-style population graph workflows.
 
-Missing values are not currently supported because common microsatellite
-imputation choices can change the resulting covariance.
+A numeric feature matrix cannot contain \code{NA}. For allele calls, each
+missing copy becomes the most frequent allele at its locus; the
+\code{imputed_allele_calls} attribute records the count. Modal imputation
+shrinks distances, so report it. \code{terradish::pca_dist()} imputes allele
+means instead. Code missing calls as \code{NA}: the function reads codes such
+as 0 or -9 as real alleles.
 
 The within-population diagonal is on a different scale from the covariance
 among population centroids and is unsuitable for a Wishart likelihood.
@@ -181,6 +192,7 @@ Ecology, Evolution, and Systematics 46:327-342.
 \doi{10.1146/annurev-ecolsys-112414-054150}
 }
 \seealso{
-\code{wishart_covariance}, \code{\link{cov_from_biallelic}},
-  \code{\link{dist_from_cov}}, \code{simulate_covariance_response}
+\code{terradish::wishart_covariance()},
+  \code{\link{cov_from_biallelic}}, \code{\link{dist_from_cov}},
+  \code{terradish::simulate_covariance_response()}
 }

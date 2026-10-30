@@ -1,18 +1,18 @@
 #' Directional edge covariates from a spatial layer
 #'
-#' Builds the antisymmetric per-directed-edge covariate
-#' \eqn{d_{ab} = x_a - x_b} used by \code{terradish_directed} to drive
-#' directional gene flow (e.g. elevation drop, flow accumulation, wind
-#' potential).  \eqn{d_{ab} = -d_{ba}}, so a positive coefficient makes movement
-#' from high to low \code{x} faster.
+#' Builds the antisymmetric covariate \eqn{d_{ab} = x_a - x_b} for directional
+#' gene-flow models; it is positive from high to low \code{x}.
 #'
 #' @param x A \code{terra::SpatRaster} layer (or a numeric vector with one value
 #'   per active graph cell) giving the potential whose gradient drives direction.
 #' @param data A \code{terradish_graph} from \code{\link{deme_graph}}.
 #' @return A list with \code{edges} (an integer matrix of directed edges, columns
 #'   \code{a}, \code{b}, 1-based node indices) and \code{d} (the matching numeric
-#'   vector \eqn{d_{ab} = x_a - x_b}).
-#' @seealso \code{terradish_directed}
+#'   vector \eqn{d_{ab} = x_a - x_b}). With \eqn{m} rows in
+#'   \code{data$edge_pairs}, rows 1 to \eqn{m} of \code{edges} follow
+#'   \code{edge_pairs} and rows \eqn{m + 1} to \eqn{2m} reverse them, so
+#'   \eqn{d_{ab} = -d_{ba}}.
+#' @seealso \code{\link{edge_flow}}, \code{\link{deme_graph}}
 #' @examples
 #' coords <- as.matrix(expand.grid(x = 0:2, y = 0:2))
 #' g <- deme_graph(coords, neighbours = "lattice")

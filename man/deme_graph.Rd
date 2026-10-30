@@ -17,27 +17,32 @@ coordinates, one row per node (columns x, y).}
 
 \item{neighbours}{Edge construction. \code{"delaunay"} (the Delaunay
 triangulation; needs the \pkg{deldir} package), \code{"knn"} (symmetric
-k-nearest-neighbour adjacency), or \code{"lattice"} (rook or queen adjacency
-for points lying on an integer grid).}
+k-nearest-neighbor adjacency), or \code{"lattice"} (rook or queen adjacency
+for points lying on a regular grid with uniform spacing).}
 
-\item{k}{Number of neighbours for \code{neighbours = "knn"}.}
+\item{k}{Number of neighbors for \code{neighbours = "knn"}; a single
+positive whole number. Values larger than the number of other nodes are
+reduced to it.}
 
 \item{queen}{For \code{neighbours = "lattice"}, also connect diagonal (queen)
-neighbours; the default rook adjacency reproduces
-\code{conductance_surface(directions = 4)}.}
+neighbors; the default rook adjacency reproduces
+\code{terradish::conductance_surface(directions = 4)}.}
 }
 \value{
 An object of class \code{c("landgraph", "terradish_graph")} with
   \code{vertex_coordinates} (an \code{n x 2} matrix), \code{edge_pairs} (an
   \code{m x 2} integer matrix of 1-based undirected edges, each pair once,
-  \code{a < b}), and \code{n_vertices}.
+  \code{a < b}), \code{coords} (a copy of \code{vertex_coordinates}), and
+  \code{n_vertices}.
 }
 \description{
 Builds the minimal spatial graph that landscape-genetic network methods use: a
 set of vertex coordinates and an undirected edge list. For deme-scale problems
 (dozens to a few hundred nodes) this avoids the heavier raster / conductance
-graph builders, and the returned object is interchangeable with a
-\code{terradish_graph}.
+graph builders. The class lets \code{\link{edge_gradient}} and
+\code{\link{edge_flow}} accept the object. It lacks the covariates,
+Laplacian, and Cholesky factor that \code{terradish::terradish()} needs;
+build fitting graphs with \code{terradish::conductance_surface()}.
 }
 \examples{
 coords <- as.matrix(expand.grid(x = 0:4, y = 0:4))

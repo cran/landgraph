@@ -4,20 +4,26 @@
 \alias{dist_from_biallelic}
 \title{Genetic distance matrix from biallelic allele counts}
 \usage{
-dist_from_biallelic(Y, N)
+dist_from_biallelic(Y, N = NULL, ...)
 }
 \arguments{
 \item{Y}{Numeric matrix of derived-allele counts (populations/individuals in
 rows, loci in columns).}
 
-\item{N}{Numeric matrix of haploid sample sizes with the same dimensions as
-\code{Y}.  See \code{\link{cov_from_biallelic}} for flexible \code{N}
-specifications.}
+\item{N}{Optional haploid sample sizes in any form accepted by
+\code{\link{cov_from_biallelic}}. The default \code{NULL} uses
+\code{ploidy} (2 unless set through \code{...}) for every cell.}
+
+\item{...}{Further arguments passed to \code{\link{cov_from_biallelic}},
+such as \code{ploidy}, \code{monomorphic}, or \code{tol}.}
 }
 \value{
-A symmetric numeric matrix of pairwise squared distances with zero
-  diagonal.  Suitable for use with \code{mlpe} or
-  \code{generalized_wishart}.
+A symmetric matrix of pairwise squared distances with a zero
+  diagonal, on the count scale of \code{cov_from_biallelic()} and named by
+  \code{rownames(Y)}. With equal sample sizes, the terradish response
+  \code{dist_from_cov(cov_from_biallelic(Y, N) / N[1])} equals this matrix
+  divided by \code{N[1]}. Suitable for \code{terradish::mlpe()} or
+  \code{terradish::generalized_wishart()}.
 }
 \description{
 Computes pairwise squared genetic distances from biallelic (SNP) allele
@@ -30,6 +36,7 @@ Y <- matrix(c(2, 1, 0,
               0, 1, 2), nrow = 3, byrow = TRUE)
 N <- matrix(2, nrow = 3, ncol = 3)
 dist_from_biallelic(Y, N)
+dist_from_biallelic(Y)   # N = NULL uses ploidy = 2 for every cell
 
 }
 \seealso{

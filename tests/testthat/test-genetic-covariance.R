@@ -106,6 +106,33 @@ test_that("cov_from_genetic_data can keep the Gower diagonal", {
   expect_equal(attr(cov, "diagonal"), "gower")
 })
 
+test_that("cov_from_genetic_data centering changes only attributes", {
+  x <- matrix(c(0, 1, 1, 1, 2, 0, 2, 1, 0, 2, 1, 2), ncol = 2, byrow = TRUE)
+  groups <- rep(c("pop1", "pop2", "pop3"), each = 2)
+
+  for (scale in c(TRUE, FALSE))
+  {
+    centered <- cov_from_genetic_data(x, groups, center = TRUE, scale = scale)
+    uncentered <- cov_from_genetic_data(x, groups, center = FALSE, scale = scale)
+    expect_equal(centered[, ], uncentered[, ], tolerance = 1e-12)
+    expect_equal(attr(centered, "centroid_distance2"),
+                 attr(uncentered, "centroid_distance2"), tolerance = 1e-12)
+    expect_equal(attr(centered, "within_variance"),
+                 attr(uncentered, "within_variance"), tolerance = 1e-12)
+  }
+})
+
+test_that("cov_from_genetic_data reads coded missing calls as alleles", {
+  calls <- data.frame(
+    loc1_a = c(100, 0, 102, 102),
+    loc1_b = c(100, 100, 102, 104)
+  )
+  cov <- cov_from_genetic_data(calls, input = "allele_calls",
+                               loci = c("loc1", "loc1"))
+  expect_true("loc1:0" %in% attr(cov, "retained_features"))
+  expect_length(attr(cov, "imputed_allele_calls"), 0L)
+})
+
 test_that("cov_from_genetic_data can normalize by retained features", {
   x <- matrix(c(0, -1,
                 0,  1,

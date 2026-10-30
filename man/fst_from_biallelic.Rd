@@ -10,13 +10,14 @@ fst_from_biallelic(Y, N)
 \item{Y}{Numeric matrix of derived-allele counts with rows as populations
 and columns as loci.}
 
-\item{N}{Numeric matrix of sampled haploid chromosomes with the same
-dimensions as \code{Y}.  For diploid data without missing genotypes,
-\code{N = 2 * n_individuals} for each cell.}
+\item{N}{Haploid sample sizes in any form accepted by
+\code{\link{cov_from_biallelic}}; every entry must exceed 1. For diploid
+data without missing genotypes, \code{N = 2 * n_individuals} for each
+cell.}
 }
 \value{
-A symmetric numeric matrix of pairwise F\eqn{_{ST}} with zero
-  diagonal.
+A symmetric matrix named by \code{rownames(Y)} holding pairwise
+  Hudson F\eqn{_{ST}}, with a zero diagonal.
 }
 \description{
 Estimates pairwise F\eqn{_{ST}} from counts of the derived allele across
@@ -33,7 +34,8 @@ The result is not guaranteed to lie in \eqn{[0, 1]} for every pair; small
 negative values can arise from sampling noise in very similar populations.
 
 To use F\eqn{_{ST}} as the response in \code{terradish}, pass the
-matrix directly to the formula left-hand side with \code{mlpe}.
+matrix directly to the formula left-hand side with
+\code{terradish::mlpe()}.
 This ratio estimator is not a Wishart response and has no Wishart degrees
 of freedom. Use covariance-derived squared distances for Wishart models.
 }
@@ -43,6 +45,9 @@ Y <- matrix(c(2, 1, 0,
               0, 1, 2), nrow = 3, byrow = TRUE)
 N <- matrix(2, nrow = 3, ncol = 3)
 fst_from_biallelic(Y, N)
+
+# A scalar or a locus-length vector also works
+fst_from_biallelic(Y, 2)
 
 }
 \references{

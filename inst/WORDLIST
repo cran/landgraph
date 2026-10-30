@@ -7,6 +7,7 @@ biallelic
 biomet
 Biometrika
 cdot
+CMD
 collinear
 Delaunay
 deme
@@ -17,7 +18,6 @@ doi
 et
 FST
 Gower
-grey
 GW
 Henders
 heritability
@@ -29,8 +29,6 @@ McEvoy
 monomorphic
 multiallelic
 Nason
-neighbour
-neighbourhood
 neighbours
 ng
 NG

@@ -12,13 +12,15 @@ full-rank (e.g. the output of \code{\link{cov_from_biallelic}} is
 positive semi-definite).}
 }
 \value{
-A symmetric numeric matrix of the same dimension as \code{Cov} with
-  zero diagonal and non-negative off-diagonal entries.
+A symmetric matrix with the dimnames of \code{Cov} and a zero
+  diagonal. Off-diagonal entries are nonnegative when \code{Cov} is
+  positive semidefinite.
 }
 \description{
-Converts a covariance matrix to its associated squared pairwise distance
-matrix.  This inverts the Gower double-centering used by
-\code{\link{cov_from_genetic_data}}.
+Converts a covariance to the squared Euclidean distances it implies. For
+\code{\link{cov_from_genetic_data}} output with \code{diagonal = "gower"},
+the result equals its \code{centroid_distance2} attribute; with
+\code{"within"}, it does not.
 }
 \details{
 The squared distance between units \eqn{i} and \eqn{j} is:
@@ -29,10 +31,15 @@ which is the law-of-cosines identity relating a covariance matrix to its
 implied squared Euclidean distances.  The diagonal of the returned matrix
 is zero.
 
-Use this function to convert a covariance matrix produced by
-\code{\link{cov_from_biallelic}} or \code{\link{cov_from_genetic_data}} into
-a distance matrix suitable for \code{generalized_wishart} or
-\code{mlpe}.
+Squared distances from a coherent covariance suit
+\code{terradish::generalized_wishart()}, which gives the same likelihood as
+\code{terradish::wishart_covariance()} and needs the same \code{nu}.
+\code{terradish::mlpe()} accepts any pairwise distance and needs no
+\code{nu}.
+
+The result keeps the \code{diagonal} and \code{centered} attributes of
+\code{Cov}, so terradish can still warn about a \code{"within"} diagonal.
+Other attributes are dropped.
 }
 \examples{
 Cov <- matrix(c(2.0, 1.2, 0.8,

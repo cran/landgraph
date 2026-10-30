@@ -6,9 +6,10 @@
 #'
 #' @param Y Numeric matrix of derived-allele counts with rows as populations
 #'   and columns as loci.
-#' @param N Numeric matrix of sampled haploid chromosomes with the same
-#'   dimensions as \code{Y}.  For diploid data without missing genotypes,
-#'   \code{N = 2 * n_individuals} for each cell.
+#' @param N Haploid sample sizes in any form accepted by
+#'   \code{\link{cov_from_biallelic}}; every entry must exceed 1. For diploid
+#'   data without missing genotypes, \code{N = 2 * n_individuals} for each
+#'   cell.
 #'
 #' @details
 #' The estimator computes, for each locus, the squared allele-frequency
@@ -20,7 +21,8 @@
 #' negative values can arise from sampling noise in very similar populations.
 #'
 #' To use F\eqn{_{ST}} as the response in \code{terradish}, pass the
-#' matrix directly to the formula left-hand side with \code{mlpe}.
+#' matrix directly to the formula left-hand side with
+#' \code{terradish::mlpe()}.
 #' This ratio estimator is not a Wishart response and has no Wishart degrees
 #' of freedom. Use covariance-derived squared distances for Wishart models.
 #'
@@ -29,8 +31,8 @@
 #' interpreting F\eqn{_{ST}}: the impact of rare variants. Genome Research
 #' 23(9):1514-1521. \doi{10.1101/gr.154831.113}
 #'
-#' @return A symmetric numeric matrix of pairwise F\eqn{_{ST}} with zero
-#'   diagonal.
+#' @return A symmetric matrix named by \code{rownames(Y)} holding pairwise
+#'   Hudson F\eqn{_{ST}}, with a zero diagonal.
 #'
 #' @seealso \code{\link{cov_from_biallelic}}, \code{\link{dist_from_biallelic}}
 #'
@@ -41,12 +43,23 @@
 #' N <- matrix(2, nrow = 3, ncol = 3)
 #' fst_from_biallelic(Y, N)
 #'
+#' # A scalar or a locus-length vector also works
+#' fst_from_biallelic(Y, 2)
+#'
 #' @export
 
 fst_from_biallelic <- function(Y, N)
 {
-  if (!all(dim(Y)==dim(N)))
-    stop("Dimension mismatch")
+  if (is.data.frame(Y))
+    Y <- as.matrix(Y)
+  if (!is.matrix(Y) || !is.numeric(Y) || nrow(Y) < 2L || ncol(Y) < 1L)
+    stop("`Y` must be a numeric matrix or data frame with at least two rows and one column",
+         call. = FALSE)
+  storage.mode(Y) <- "double"
+
+  # Expand scalar and vector `N` so a locus-length vector aligns with columns.
+  N <- .biallelic_sample_size_matrix(N, Y, ploidy = 2)
+
   if (anyNA(Y) || anyNA(N))
     stop("missing values are not currently supported")
   if (any(Y<0) || any(N<0))
@@ -57,11 +70,14 @@ fst_from_biallelic <- function(Y, N)
     stop("All sample sizes in `N` must exceed 1")
 
   Fr <- Y/N
-  f2 <- apply(apply(Fr, 2, function(x) outer(x,x,"-")^2), 1, mean, na.rm=TRUE)
-  cornum <- apply(Fr*(1-Fr)/(N-1), 1, mean, na.rm=TRUE)
-  corden <- apply(Fr*(1-Fr)*N/(N-1), 1, mean, na.rm=TRUE)
+  # Mean squared frequency difference over loci, without an n x n x L array.
+  r <- rowSums(Fr^2)
+  f2 <- (outer(r, r, "+") - 2 * tcrossprod(Fr)) / ncol(Fr)
+  cornum <- rowMeans(Fr*(1-Fr)/(N-1))
+  corden <- rowMeans(Fr*(1-Fr)*N/(N-1))
   fst <- (f2 - c(outer(cornum, cornum, "+")))/(f2 - c(outer(cornum, cornum, "+")) + c(outer(corden, corden, "+")))
-  fst <- matrix(fst, nrow(Y), nrow(Y))
+  fst <- matrix(fst, nrow(Y), nrow(Y),
+                dimnames = list(rownames(Y), rownames(Y)))
   diag(fst) <- 0
   fst
 }
@@ -70,8 +86,7 @@ fst_from_biallelic <- function(Y, N)
 #'
 #' Computes a sample covariance matrix from counts of the derived allele across
 #' biallelic (SNP) markers.  Rows may be individuals, populations, or any other
-#' sampled genetic unit.  The result is directly suitable as the response
-#' \code{S} in \code{wishart_covariance}.
+#' sampled genetic unit.
 #'
 #' @param Y Numeric matrix of derived-allele counts with sampled units in rows
 #'   and loci in columns.  For diploid individuals genotyped as 0/1/2, this is
@@ -110,12 +125,26 @@ fst_from_biallelic <- function(Y, N)
 #' in normalized allele-frequency space, analogous to the genomic relationship
 #' matrix of Yang et al. (2010).
 #'
+#' The function standardizes counts, not frequencies, so entries grow with the
+#' haploid sample size: \eqn{Z_{i\ell} = \sqrt{N_{i\ell}}(\hat p_{i\ell} -
+#' p_\ell)/\sqrt{p_\ell(1-p_\ell)}}. For individual 0/1/2 dosage this is the
+#' genomic relationship matrix scale. For population counts with equal sample
+#' sizes, \code{cov_from_biallelic(Y, N) / N[1]} gives the standardized
+#' allele-frequency covariance that terradish fits. Do not use that shortcut
+#' with unequal sizes; rows then carry unequal sampling variance that a common
+#' nugget does not absorb. \code{Y} and \code{N} cannot contain \code{NA}. For
+#' population counts, record missing genotypes by lowering the matching cells
+#' of \code{N}. Every cell of \code{N} must be positive, so for individual
+#' dosage you must filter loci or individuals first. Counting either allele
+#' gives the same covariance.
+#'
 #' Per-locus standardization gives greater weight to rare variants, including
 #' their contribution to the diagonal. Filter loci by minor allele frequency
-#' before constructing the covariance and report the filtering rule. Unequal
-#' chromosome counts also imply unequal sampling variance. With unequal counts
-#' across rows, pooled-frequency centering does not generally produce zero
-#' row sums in the covariance.
+#' before constructing the covariance, report the filtering rule, and check
+#' that conclusions hold across thresholds. Unequal chromosome counts also
+#' imply unequal sampling variance. With unequal counts across rows,
+#' pooled-frequency centering does not generally produce zero row sums in the
+#' covariance.
 #'
 #' To convert the covariance to a pairwise distance matrix, use
 #' \code{\link{dist_from_cov}}.  For non-biallelic or multiallelic data, use
@@ -127,9 +156,10 @@ fst_from_biallelic <- function(Y, N)
 #' 2010. Common SNPs explain a large proportion of the heritability for human
 #' height. Nature Genetics 42(7):565-569. \doi{10.1038/ng.608}
 #'
-#' @return A symmetric positive-semidefinite numeric matrix of pairwise
-#'   genetic covariances.  Row and column names match those of \code{Y} when
-#'   present. The \code{diagonal} attribute is \code{"normalized_dosage"}.
+#' @return A symmetric positive-semidefinite \code{nrow(Y)} by \code{nrow(Y)}
+#'   matrix of pairwise genetic covariances on the count-standardized scale
+#'   (see Details).  Row and column names match the row names of \code{Y}
+#'   when present. The \code{diagonal} attribute is \code{"normalized_dosage"}.
 #'   The \code{centered} attribute is \code{"sites"} when chromosome counts
 #'   are equal across rows at every retained locus; otherwise it is
 #'   \code{"pooled_allele_frequency"}. These labels describe the construction
@@ -137,7 +167,7 @@ fst_from_biallelic <- function(Y, N)
 #'
 #' @seealso \code{\link{cov_from_genetic_data}}, \code{\link{fst_from_biallelic}},
 #'   \code{\link{dist_from_biallelic}}, \code{\link{dist_from_cov}},
-#'   \code{wishart_covariance}
+#'   \code{terradish::wishart_covariance()}
 #'
 #' @examples
 #' # Individual diploid dosage matrix: 3 individuals, 3 SNPs
@@ -278,46 +308,42 @@ cov_from_biallelic <- function(Y,
 #'   column. For a diploid microsatellite matrix with two columns per locus, the
 #'   two columns for each locus should have the same \code{loci} value.
 #' @param center Should feature columns be centered by their global mean before
-#'   covariance calculation? Default \code{TRUE}.
+#'   covariance calculation? Default \code{TRUE}. The covariance depends only
+#'   on differences among units, so centering changes only the
+#'   \code{centroids}, \code{unit_features}, and \code{feature_center}
+#'   attributes.
 #' @param scale Should feature columns be divided by their global standard
-#'   deviation? Default \code{TRUE}. Constant features are dropped.
+#'   deviation? Default \code{TRUE}. Scaling divides each feature by its
+#'   standard deviation, so rare alleles get the same variance as common ones
+#'   and therefore more relative weight. Constant features are dropped with a
+#'   warning.
 #' @param tol Tolerance used to identify constant features when
 #'   \code{scale = TRUE}.
-#' @param diagonal How to set the returned covariance diagonal. The default,
-#'   \code{"gower"}, retains the centered covariance for both grouped and
-#'   individual-level data. The legacy \code{"auto"} option uses
-#'   \code{"within"} for grouped population data with replication and
-#'   \code{"gower"} for individual-level data. \code{"within"} replaces the
-#'   Gower covariance diagonal with the within-population genetic variance,
-#'   following the population-graph covariance construction. \code{"gower"}
-#'   leaves the double-centered distance diagonal unchanged.
+#' @param diagonal How to set the returned covariance diagonal.
+#'   \code{"gower"} (default) keeps the double-centered diagonal, so every
+#'   entry shares one scale; use it for Wishart models. \code{"within"}
+#'   substitutes summed within-population variances, as in population graphs;
+#'   terradish warns when it receives one. \code{"auto"} restores the default
+#'   used before 0.0.3: \code{"within"} for grouped data with replication and
+#'   \code{"gower"} otherwise.
 #' @param normalize Should covariance scale be normalized? \code{"none"} returns
 #'   sums over retained features. \code{"features"} divides the covariance,
 #'   squared distances, and within-population variances by the number of retained
-#'   features.
+#'   features. The divisor counts expanded allele features, not loci, and is
+#'   not \code{nu}.
 #'
 #' @details
 #' The function first obtains a numeric feature matrix. Microsatellite data can
 #' be supplied as allele calls by setting \code{input = "allele_calls"}; these are
 #' converted to allele dosage columns, one column per locus-allele combination.
-#' Missing allele calls are imputed to the modal observed allele within each
-#' locus, with a message reporting the number of imputed calls.
 #'
-#' For Wishart models, the \code{nu} argument is the effective degrees of
-#' freedom in the empirical covariance.  With biallelic SNPs, each retained
-#' polymorphic SNP contributes one independent standardized allele-frequency
-#' column, so \code{nu} is usually the retained SNP count (reduced for linkage
-#' disequilibrium).  With microsatellites, use the number of loci \eqn{L} as
-#' the conservative default: allele frequencies within a locus are correlated
-#' (they sum to a constant), so the locus is the natural unit of information in
-#' population genetics.  \eqn{\sum_l (K_l - 1)}, where \eqn{K_l} is the
-#' number of observed alleles at locus \eqn{l}, is an upper bound that assumes
-#' within-locus alleles are independent; this assumption is not generally
-#' satisfied, and using it can yield over-confident standard errors and
-#' model-selection statistics.  The true effective \eqn{\nu} for microsatellite
-#' data lies somewhere between \eqn{L} and \eqn{\sum_l (K_l - 1)}.  Report the
-#' value used and conduct a sensitivity analysis across that range.  See
-#' \code{wishart_covariance} for the full explanation.
+#' Wishart models in terradish, \code{terradish::wishart_covariance()} and
+#' \code{terradish::generalized_wishart()}, need \code{nu}, an
+#' effective-information value that you supply. This function does not compute
+#' it, and the number of SNPs, loci, or allele features does not supply it:
+#' linked loci share population history, so they carry far less independent
+#' information than their count suggests. Hold \code{nu} fixed across compared
+#' models and report sensitivity with \code{terradish::terradish_rescale_nu()}.
 #'
 #' If \code{groups = NULL}, rows of the processed feature matrix are used
 #' directly and squared Euclidean distances among individuals are transformed to
@@ -330,8 +356,12 @@ cov_from_biallelic <- function(Y,
 #' matches the covariance construction used before population-graph
 #' partial-correlation filtering in Dyer-style population graph workflows.
 #'
-#' Missing values are not currently supported because common microsatellite
-#' imputation choices can change the resulting covariance.
+#' A numeric feature matrix cannot contain \code{NA}. For allele calls, each
+#' missing copy becomes the most frequent allele at its locus; the
+#' \code{imputed_allele_calls} attribute records the count. Modal imputation
+#' shrinks distances, so report it. \code{terradish::pca_dist()} imputes allele
+#' means instead. Code missing calls as \code{NA}: the function reads codes such
+#' as 0 or -9 as real alleles.
 #'
 #' The within-population diagonal is on a different scale from the covariance
 #' among population centroids and is unsuitable for a Wishart likelihood.
@@ -358,32 +388,44 @@ cov_from_biallelic <- function(Y,
 #'   (when \code{groups = NULL}) or population (when \code{groups} is
 #'   supplied).  The matrix is positive semi-definite up to numerical
 #'   tolerance, except when \code{diagonal = "within"} is used (see Details).
-#'   The following attributes are attached:
+#'   The following attributes are attached. For a result \code{S}, use
+#'   \code{S[, ]} to view the matrix without attributes.
 #' \describe{
-#'   \item{\code{centroids}}{Feature matrix of population centroids (or
-#'     individual feature vectors when ungrouped).}
-#'   \item{\code{centroid_distance2}}{Squared Euclidean distance matrix among
-#'     centroids.}
-#'   \item{\code{within_variance}}{Named vector of within-population variances
-#'     (only when \code{groups} is supplied and some populations have \eqn{\geq
-#'     2} individuals).}
-#'   \item{\code{unit_size}}{Named integer vector of group sizes.}
+#'   \item{\code{centroids}, \code{unit_features}}{Feature matrix of
+#'     population centroids (or individual feature vectors when ungrouped),
+#'     one row per returned unit. The two attributes hold the same matrix.}
+#'   \item{\code{centroid_distance2}, \code{unit_distance2}}{Squared Euclidean
+#'     distance matrix among the rows of \code{centroids}, divided by
+#'     \code{normalizer}. The two attributes hold the same matrix.}
+#'   \item{\code{within_variance}}{Named vector of summed within-population
+#'     feature variances, divided by \code{normalizer}. Attached whenever
+#'     \code{groups} is supplied, with 0 for single-member groups. It fills
+#'     the diagonal only when \code{diagonal = "within"}.}
+#'   \item{\code{unit_size}}{Named vector of group sizes: numeric when
+#'     \code{groups} is supplied, integer (all 1) when ungrouped.}
 #'   \item{\code{feature_center}, \code{feature_scale}}{Centering and scaling
 #'     constants applied to each retained feature.}
 #'   \item{\code{retained_features}}{Names of the features kept after constant
 #'     features were dropped.}
+#'   \item{\code{input}}{The \code{input} format used.}
+#'   \item{\code{imputed_allele_calls}, \code{imputed_modal_alleles}}{Only for
+#'     \code{input = "allele_calls"}: the number of imputed calls per locus
+#'     and the modal allele used to fill them, for loci with missing calls
+#'     (zero-length when no call was missing).}
 #'   \item{\code{level}}{Either \code{"individual"} or \code{"population"}.}
 #'   \item{\code{diagonal}}{The \code{diagonal} method actually used.}
 #'   \item{\code{centered}}{\code{"sites"} for the Gower covariance, or
 #'     \code{"sites_before_diagonal_replacement"} when the within-population
 #'     diagonal replaces the centered covariance diagonal.}
+#'   \item{\code{normalize}}{The \code{normalize} option used.}
 #'   \item{\code{normalizer}}{Divisor applied to the covariance and distances
 #'     (\code{1} for \code{normalize = "none"}, number of retained features for
 #'     \code{normalize = "features"}).}
 #' }
 #'
-#' @seealso \code{wishart_covariance}, \code{\link{cov_from_biallelic}},
-#'   \code{\link{dist_from_cov}}, \code{simulate_covariance_response}
+#' @seealso \code{terradish::wishart_covariance()},
+#'   \code{\link{cov_from_biallelic}}, \code{\link{dist_from_cov}},
+#'   \code{terradish::simulate_covariance_response()}
 #'
 #' @examples
 #' # Numeric allele dosage / feature matrix
@@ -653,9 +695,10 @@ cov_from_genetic_data <- function(x,
 
 #' Squared-distance matrix from a covariance matrix
 #'
-#' Converts a covariance matrix to its associated squared pairwise distance
-#' matrix.  This inverts the Gower double-centering used by
-#' \code{\link{cov_from_genetic_data}}.
+#' Converts a covariance to the squared Euclidean distances it implies. For
+#' \code{\link{cov_from_genetic_data}} output with \code{diagonal = "gower"},
+#' the result equals its \code{centroid_distance2} attribute; with
+#' \code{"within"}, it does not.
 #'
 #' @param Cov A square numeric covariance matrix.  Does not need to be
 #'   full-rank (e.g. the output of \code{\link{cov_from_biallelic}} is
@@ -670,13 +713,19 @@ cov_from_genetic_data <- function(x,
 #' implied squared Euclidean distances.  The diagonal of the returned matrix
 #' is zero.
 #'
-#' Use this function to convert a covariance matrix produced by
-#' \code{\link{cov_from_biallelic}} or \code{\link{cov_from_genetic_data}} into
-#' a distance matrix suitable for \code{generalized_wishart} or
-#' \code{mlpe}.
+#' Squared distances from a coherent covariance suit
+#' \code{terradish::generalized_wishart()}, which gives the same likelihood as
+#' \code{terradish::wishart_covariance()} and needs the same \code{nu}.
+#' \code{terradish::mlpe()} accepts any pairwise distance and needs no
+#' \code{nu}.
 #'
-#' @return A symmetric numeric matrix of the same dimension as \code{Cov} with
-#'   zero diagonal and non-negative off-diagonal entries.
+#' The result keeps the \code{diagonal} and \code{centered} attributes of
+#' \code{Cov}, so terradish can still warn about a \code{"within"} diagonal.
+#' Other attributes are dropped.
+#'
+#' @return A symmetric matrix with the dimnames of \code{Cov} and a zero
+#'   diagonal. Off-diagonal entries are nonnegative when \code{Cov} is
+#'   positive semidefinite.
 #'
 #' @seealso \code{\link{cov_from_biallelic}}, \code{\link{cov_from_genetic_data}},
 #'   \code{\link{dist_from_biallelic}}
@@ -697,8 +746,16 @@ cov_from_genetic_data <- function(x,
 
 dist_from_cov <- function(Cov)
 {
-  ones <- matrix(1, nrow(Cov), 1)
-  diag(Cov) %*% t(ones) + ones %*% t(diag(Cov)) - 2*Cov
+  Cov <- as.matrix(Cov)
+  if (!is.numeric(Cov) || nrow(Cov) != ncol(Cov))
+    stop("`Cov` must be a square numeric matrix", call. = FALSE)
+  d <- diag(Cov)
+  D <- outer(d, d, "+") - 2 * Cov[, , drop = FALSE]  # drops other attributes
+  dimnames(D) <- dimnames(Cov)
+  # terradish warns when attr(S, "diagonal") is "within"; keep that label.
+  attr(D, "diagonal") <- attr(Cov, "diagonal", exact = TRUE)
+  attr(D, "centered") <- attr(Cov, "centered", exact = TRUE)
+  D
 }
 
 #' Genetic distance matrix from biallelic allele counts
@@ -709,13 +766,18 @@ dist_from_cov <- function(Cov)
 #'
 #' @param Y Numeric matrix of derived-allele counts (populations/individuals in
 #'   rows, loci in columns).
-#' @param N Numeric matrix of haploid sample sizes with the same dimensions as
-#'   \code{Y}.  See \code{\link{cov_from_biallelic}} for flexible \code{N}
-#'   specifications.
+#' @param N Optional haploid sample sizes in any form accepted by
+#'   \code{\link{cov_from_biallelic}}. The default \code{NULL} uses
+#'   \code{ploidy} (2 unless set through \code{...}) for every cell.
+#' @param ... Further arguments passed to \code{\link{cov_from_biallelic}},
+#'   such as \code{ploidy}, \code{monomorphic}, or \code{tol}.
 #'
-#' @return A symmetric numeric matrix of pairwise squared distances with zero
-#'   diagonal.  Suitable for use with \code{mlpe} or
-#'   \code{generalized_wishart}.
+#' @return A symmetric matrix of pairwise squared distances with a zero
+#'   diagonal, on the count scale of \code{cov_from_biallelic()} and named by
+#'   \code{rownames(Y)}. With equal sample sizes, the terradish response
+#'   \code{dist_from_cov(cov_from_biallelic(Y, N) / N[1])} equals this matrix
+#'   divided by \code{N[1]}. Suitable for \code{terradish::mlpe()} or
+#'   \code{terradish::generalized_wishart()}.
 #'
 #' @seealso \code{\link{cov_from_biallelic}}, \code{\link{dist_from_cov}},
 #'   \code{\link{fst_from_biallelic}}
@@ -726,10 +788,11 @@ dist_from_cov <- function(Cov)
 #'               0, 1, 2), nrow = 3, byrow = TRUE)
 #' N <- matrix(2, nrow = 3, ncol = 3)
 #' dist_from_biallelic(Y, N)
+#' dist_from_biallelic(Y)   # N = NULL uses ploidy = 2 for every cell
 #'
 #' @export
 
-dist_from_biallelic <- function(Y, N)
+dist_from_biallelic <- function(Y, N = NULL, ...)
 {
-  dist_from_cov(cov_from_biallelic(Y, N))
+  dist_from_cov(cov_from_biallelic(Y, N, ...))
 }

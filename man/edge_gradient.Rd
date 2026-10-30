@@ -15,14 +15,14 @@ per active graph cell) giving the potential whose gradient drives direction.}
 \value{
 A list with \code{edges} (an integer matrix of directed edges, columns
   \code{a}, \code{b}, 1-based node indices) and \code{d} (the matching numeric
-  vector \eqn{d_{ab} = x_a - x_b}).
+  vector \eqn{d_{ab} = x_a - x_b}). With \eqn{m} rows in
+  \code{data$edge_pairs}, rows 1 to \eqn{m} of \code{edges} follow
+  \code{edge_pairs} and rows \eqn{m + 1} to \eqn{2m} reverse them, so
+  \eqn{d_{ab} = -d_{ba}}.
 }
 \description{
-Builds the antisymmetric per-directed-edge covariate
-\eqn{d_{ab} = x_a - x_b} used by \code{terradish_directed} to drive
-directional gene flow (e.g. elevation drop, flow accumulation, wind
-potential).  \eqn{d_{ab} = -d_{ba}}, so a positive coefficient makes movement
-from high to low \code{x} faster.
+Builds the antisymmetric covariate \eqn{d_{ab} = x_a - x_b} for directional
+gene-flow models; it is positive from high to low \code{x}.
 }
 \examples{
 coords <- as.matrix(expand.grid(x = 0:2, y = 0:2))
@@ -31,5 +31,5 @@ elevation <- c(10, 20, 30, 25, 15, 5, 8, 18, 28)
 edge_gradient(elevation, g)
 }
 \seealso{
-\code{terradish_directed}
+\code{\link{edge_flow}}, \code{\link{deme_graph}}
 }

@@ -42,9 +42,10 @@ behavior.}
 as monomorphic when its pooled frequency is within \code{tol} of 0 or 1.}
 }
 \value{
-A symmetric positive-semidefinite numeric matrix of pairwise
-  genetic covariances.  Row and column names match those of \code{Y} when
-  present. The \code{diagonal} attribute is \code{"normalized_dosage"}.
+A symmetric positive-semidefinite \code{nrow(Y)} by \code{nrow(Y)}
+  matrix of pairwise genetic covariances on the count-standardized scale
+  (see Details).  Row and column names match the row names of \code{Y}
+  when present. The \code{diagonal} attribute is \code{"normalized_dosage"}.
   The \code{centered} attribute is \code{"sites"} when chromosome counts
   are equal across rows at every retained locus; otherwise it is
   \code{"pooled_allele_frequency"}. These labels describe the construction
@@ -53,8 +54,7 @@ A symmetric positive-semidefinite numeric matrix of pairwise
 \description{
 Computes a sample covariance matrix from counts of the derived allele across
 biallelic (SNP) markers.  Rows may be individuals, populations, or any other
-sampled genetic unit.  The result is directly suitable as the response
-\code{S} in \code{wishart_covariance}.
+sampled genetic unit.
 }
 \details{
 Let \eqn{p_\ell = \sum_i Y_{i\ell} / \sum_i N_{i\ell}} be the pooled
@@ -69,12 +69,26 @@ retained (polymorphic) loci.  The resulting matrix is the sample covariance
 in normalized allele-frequency space, analogous to the genomic relationship
 matrix of Yang et al. (2010).
 
+The function standardizes counts, not frequencies, so entries grow with the
+haploid sample size: \eqn{Z_{i\ell} = \sqrt{N_{i\ell}}(\hat p_{i\ell} -
+p_\ell)/\sqrt{p_\ell(1-p_\ell)}}. For individual 0/1/2 dosage this is the
+genomic relationship matrix scale. For population counts with equal sample
+sizes, \code{cov_from_biallelic(Y, N) / N[1]} gives the standardized
+allele-frequency covariance that terradish fits. Do not use that shortcut
+with unequal sizes; rows then carry unequal sampling variance that a common
+nugget does not absorb. \code{Y} and \code{N} cannot contain \code{NA}. For
+population counts, record missing genotypes by lowering the matching cells
+of \code{N}. Every cell of \code{N} must be positive, so for individual
+dosage you must filter loci or individuals first. Counting either allele
+gives the same covariance.
+
 Per-locus standardization gives greater weight to rare variants, including
 their contribution to the diagonal. Filter loci by minor allele frequency
-before constructing the covariance and report the filtering rule. Unequal
-chromosome counts also imply unequal sampling variance. With unequal counts
-across rows, pooled-frequency centering does not generally produce zero
-row sums in the covariance.
+before constructing the covariance, report the filtering rule, and check
+that conclusions hold across thresholds. Unequal chromosome counts also
+imply unequal sampling variance. With unequal counts across rows,
+pooled-frequency centering does not generally produce zero row sums in the
+covariance.
 
 To convert the covariance to a pairwise distance matrix, use
 \code{\link{dist_from_cov}}.  For non-biallelic or multiallelic data, use
@@ -104,5 +118,5 @@ height. Nature Genetics 42(7):565-569. \doi{10.1038/ng.608}
 \seealso{
 \code{\link{cov_from_genetic_data}}, \code{\link{fst_from_biallelic}},
   \code{\link{dist_from_biallelic}}, \code{\link{dist_from_cov}},
-  \code{wishart_covariance}
+  \code{terradish::wishart_covariance()}
 }
